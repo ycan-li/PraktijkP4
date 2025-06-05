@@ -27,4 +27,5 @@
 .venv
 .idea
 /db_creds.json
+/request.json
 */*.log
