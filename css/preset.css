@@ -1,0 +1,23 @@
+.fs-7 {
+    font-size: 0.75rem;
+}
+
+.display-7 {
+    font-weight: 300;
+    line-height: 1.2;
+    font-size: calc(1.25rem + 1vw)
+}
+
+.navbar {
+    --bs-navbar-padding-y: .25rem;
+}
+
+.navbar-nav {
+    padding-left: inherit;
+}
+
+.bi {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
