@@ -92,7 +92,7 @@ class File
     <title>Fixed top navbar example · Bootstrap v5.3</title>
     <link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="../assets/js/color-modes.js"></script>
-    <script src="../js/script.js"></script>
+    <script src="../js/discover.js"></script>
 </head>
 <body>
 <!--navbar-->

@@ -1,0 +1,6 @@
+{
+  "fiveServer.php.executable": "/opt/homebrew/bin/php",
+  "fiveServer.highlight": true,
+  "fiveServer.injectBody": true,
+  "fiveServer.navigate": true
+}
