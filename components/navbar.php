@@ -40,7 +40,6 @@
             <!-- Right: Navigation links -->
             <ul class="navbar-nav flex-row me-2">
                 <li class="nav-item px-2"><a class="nav-link" href="index.php">Home</a></li>
-                <li class="nav-item px-2"><a class="nav-link" href="discover.php">Ontdek</a></li>
                 <li class="nav-item px-2"><a class="nav-link" href="add.php">Toevoeg</a></li>
             </ul>
 
@@ -64,7 +63,6 @@
             <div class="offcanvas-body">
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="discover.php">Ontdek</a></li>
                     <li class="nav-item"><a class="nav-link" href="add.php">Toevoeg</a></li>
                 </ul>
             </div>
@@ -89,14 +87,14 @@
 
                 // If we're not on the discover page, redirect to it with the search query
                 const currentPage = window.location.pathname;
-                if (!currentPage.includes('discover.php')) {
+                if (!currentPage.includes('index.php')) {
                     // Store the search query in localStorage so discover.js can use it
                     localStorage.setItem('navbarSearchQuery', searchQuery);
 
                     // Redirect to the discover page
-                    window.location.href = 'discover.php';
+                    window.location.href = 'index.php';
                 } else {
-                    // If we're already on discover.php, the event handler in discover.js will handle it
+                    // If we're already on index.php, the event handler in discover.js will handle it
                     // But we need to make sure the mobile search box is updated too
                     const mobileSearchBox = document.getElementById('search-box');
                     if (mobileSearchBox) {
@@ -111,11 +109,11 @@
         if (mobileSearchButton) {
             mobileSearchButton.addEventListener('click', function (e) {
                 const currentPage = window.location.pathname;
-                if (!currentPage.includes('discover.php')) {
+                if (!currentPage.includes('index.php')) {
                     e.preventDefault();
-                    window.location.href = 'discover.php';
+                    window.location.href = 'index.php';
                 }
-                // If we're on discover.php, let the default handler in discover.js handle it
+                // If we're on index.php, let the default handler in discover.js handle it
             });
         }
     });

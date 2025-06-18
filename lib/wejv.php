@@ -13,7 +13,7 @@ enum Sort: int
 
 class Wejv
 {
-    private PDO $conn;
+    protected PDO $conn;
     public string $dbname;
     private string $join_sql;
 
@@ -339,6 +339,84 @@ class Wejv
         $stmt = $this->conn->prepare("SELECT menu_info_id FROM fav WHERE user_id = ?");
         $stmt->execute([$userId]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Insert a new menu item into the database
+     *
+     * @param array $menuData Array containing menu data (name, prepare_time, person_num, author_id, description, preparation, ingredients, img, genres, tags)
+     * @return int The ID of the newly created menu item
+     * @throws Exception If the insertion fails
+     */
+    public function insertMenu(array $menuData): int
+    {
+        try {
+            $this->conn->beginTransaction();
+
+            // Insert into menu_info table
+            $stmt = $this->conn->prepare("
+                INSERT INTO menu_info (name, prepare_time, person_num, author_id, description, preparation, ingredients, img)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+
+            $stmt->execute([
+                $menuData['name'],
+                $menuData['prepare_time'],
+                $menuData['person_num'],
+                $menuData['author_id'],
+                $menuData['description'],
+                $menuData['preparation'],
+                $menuData['ingredients'],
+                $menuData['img']
+            ]);
+
+            $menuId = $this->conn->lastInsertId();
+
+            // Insert genres if provided
+            if (!empty($menuData['genres'])) {
+                $genreValues = [];
+                $genrePlaceholders = [];
+
+                foreach ($menuData['genres'] as $i => $genreId) {
+                    $genrePlaceholders[] = "(?, ?)";
+                    $genreValues[] = $menuId;
+                    $genreValues[] = $genreId;
+                }
+
+                $stmt = $this->conn->prepare("
+                    INSERT INTO menu_info_genre (menu_info_id, genre_id)
+                    VALUES " . implode(',', $genrePlaceholders)
+                );
+
+                $stmt->execute($genreValues);
+            }
+
+            // Insert tags if provided
+            if (!empty($menuData['tags'])) {
+                $tagValues = [];
+                $tagPlaceholders = [];
+
+                foreach ($menuData['tags'] as $i => $tagId) {
+                    $tagPlaceholders[] = "(?, ?)";
+                    $tagValues[] = $menuId;
+                    $tagValues[] = $tagId;
+                }
+
+                $stmt = $this->conn->prepare("
+                    INSERT INTO menu_info_tag (menu_info_id, tag_id)
+                    VALUES " . implode(',', $tagPlaceholders)
+                );
+
+                $stmt->execute($tagValues);
+            }
+
+            $this->conn->commit();
+            return $menuId;
+
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            throw new Exception("Failed to insert menu: " . $e->getMessage());
+        }
     }
 
     /**

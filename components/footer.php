@@ -9,9 +9,9 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link icon-link icon-link-hover stretched-link d-flex flex-column align-items-center" href="discover.php">
+                    <a class="nav-link icon-link icon-link-hover stretched-link d-flex flex-column align-items-center" href="index.php">
                         <i class="bi bi-binoculars d-flex justify-content-center align-items-center fs-5 text-bg-primary nav-item-icon"></i>
-                        <span class="fs-7 text text-bg-primary">Ontdek</span>
+                        <span class="fs-7 text text-bg-primary">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -21,7 +21,7 @@
                     </a>
                 </li>
                 <li class="nav-item position-relative">
-                    <a class="nav-link icon-link stretched-link d-flex flex-column align-items-center" href="discover.php#search-box">
+                    <a class="nav-link icon-link stretched-link d-flex flex-column align-items-center" href="index.php#search-box">
                         <i class="bi bi-search d-flex justify-content-center align-items-center fs-5 text-bg-primary nav-item-icon"></i>
                         <span class="fs-7 text text-bg-primary">Zoek</span>
                     </a>

@@ -103,8 +103,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const favFilterTemplate = `
             <div id="filter-favorites" class="favorite-filter">
-                <button id="favorites-toggle" class="btn btn-outline-danger mb-2 fw-bold">
-                    <i class="bi bi-heart me-1"></i> Favorites
+                <button id="favorites-toggle" class="btn btn-outline-danger d-flex gap-1 fw-bold">
+                    <i class="bi bi-heart me-1"></i> Fav
                 </button>
             </div>
         `;
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const filterDisplayName = filterMap[filterName];
             const filterTemplate = `
                 <div id='filter-${filterName}' class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle mb-2 fw-bold" data-bs-toggle="dropdown"
+                    <button class="btn btn-secondary dropdown-toggle fw-bold" data-bs-toggle="dropdown"
                             id="title-${filterName}" aria-expanded="false">${filterDisplayName}
                     </button>
                     <div class="dropdown-menu position-absolute border-0 pt-0 mx-0 rounded-3 shadow overflow-x-hidden overflow-y-auto w-100"

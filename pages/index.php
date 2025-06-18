@@ -1,110 +1,52 @@
 <?php
-function getGreeting(): string
-{
-    $hour = (int)date('G');
-    return $hour < 6 ? "Goedenacht" :
-        ($hour < 12 ? "Goedemorgen" :
-            ($hour < 18 ? "Goedemiddag" : "Goedeavond"));
-}
-
-function getUsername(): string
-{
-    #TODO fetch username from db
-    return "Li";
-}
-
-function isLogin(): bool
-{
-    #TODO
-    return false;
-}
-
-function recentAddedMenu(): array
-{
-    #TODO
-    return [
-        [
-            "id" => 1,
-            "name" => "Test name",
-            "img" => "../test/meal.jpeg",
-            "author" => "Test Author",
-            "ctime" => "2017-06-15 09:34:21"
-        ],
-        [
-            "id" => 1,
-            "name" => "Test name",
-            "img" => "../test/meal.jpeg",
-            "author" => "Test Author",
-            "ctime" => "2017-06-15 09:34:21"
-        ],
-        [
-            "id" => 1,
-            "name" => "Test name",
-            "img" => "../test/meal.jpeg",
-            "author" => "Test Author",
-            "ctime" => "2017-06-15 09:34:21"
-        ]
-    ];
-}
-
-
-class File
-{
-    private string $path {
-        get {
-            return $this->path;
-        }
-    }
-
-    public static function joinPaths(...$paths): array|string|null
-    {
-        return preg_replace('~[/\\\\]+~', DIRECTORY_SEPARATOR, implode(DIRECTORY_SEPARATOR, $paths));
-    }
-
-    public static function cache(string $str, string $cache_dir = "./"): File
-    {
-        $full_path = self::joinPaths($cache_dir, $str);
-        return new File($full_path);
-    }
-
-    public function __construct(string $str)
-    {
-        if (!file_exists($str)) {
-            throw new RuntimeException("$str not found");
-        }
-
-        $this->path = $str;
-    }
-
-    public function __toString()
-    {
-        return $this->path;
-    }
-}
-
+// ...existing code...
 ?>
-
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Fixed top navbar example · Bootstrap v5.3</title>
-    <link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="../assets/js/color-modes.js"></script>
-    <script src="../js/discover.js"></script>
+    <title>Toevoeg - Zoek en Filter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="../css/style.css" rel="stylesheet">
 </head>
 <body>
-<!--navbar-->
 <?php include "../components/navbar.php"; ?>
-<main>
-    <div class="container tab-navigation d-flex justify-content-start gap-2 px-4">
-        <button class="tab-btn btn btn-outline-primary active" data-tab="all">Alles</button>
-        <button class="tab-btn btn btn-outline-primary" data-tab="created-by-me">Ik</button>
-        <button class="tab-btn btn btn-outline-primary" data-tab="created-by-others">anderen</button>
+<main class="container py-r">
+    <!-- Search Box (visible only on mobile) -->
+    <div id="search-section" class="d-block d-lg-none mb-4 px-4">
+        <form class="d-flex" role="search">
+            <input id="search-box" class="form-control me-2" type="search" placeholder="Zoek..." aria-label="Zoek">
+            <button id="search-button" class="btn btn-primary" type="submit">Zoeken</button>
+        </form>
+    </div>
+
+    <div class="filter-toolbar d-flex flex-wrap justify-content-between align-items-center">
+        <div class="d-flex flex-wrap align-items-center gap-2 px-4" id="filter-container">
+            <!-- Filter buttons will be added dynamically -->
+        </div>
+
+        <!-- Filter Action Buttons -->
+        <div class="d-flex justify-content-end gap-2 px-4">
+            <button id="apply-filter-button" class="btn btn-primary">Apply Filter</button>
+            <button id="clear-filter-button" class="btn btn-outline-secondary">Clear Filter</button>
+        </div>
+    </div>
+    <!-- Filters -->
+
+    <div class="d-flex flex-column px-4 py-4" id="content-container">
+        <nav id="pagination-container-top" class="pagination-container d-flex justify-content-center align-self-center w-100" aria-label="Page pagination" style="max-width:100%;">
+            <ul class="pagination flex-wrap mb-0 w-100" style="max-width:100%;"></ul>
+        </nav>
+        <div id="card-container">
+        </div>
+        <nav id="pagination-container-bottom" class="pagination-container d-flex justify-content-center align-self-center w-100" aria-label="Page pagination" style="max-width:100%;">
+            <ul class="pagination flex-wrap mb-0 w-100" style="max-width:100%;"></ul>
+        </nav>
     </div>
 </main>
-
-<script src="../assets/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+<script src="../js/discover.js"></script>
 </body>
-
+</html>

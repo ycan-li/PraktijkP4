@@ -37,6 +37,19 @@ function toggle_favorite($creds, $payload): false|string {
     return json_encode(['success' => true, 'isFavorite' => $result]);
 }
 
+function check_favorite($creds, $payload): false|string {
+    $wevj = new Wejv($creds);
+    $userId = (int)$payload['userId'];
+    $menuId = (int)$payload['menuId'];
+
+    if ($userId <= 0 || $menuId <= 0) {
+        return json_encode(['success' => false, 'message' => 'Invalid user or menu ID']);
+    }
+
+    $result = $wevj->isFavorite($userId, $menuId);
+    return json_encode(['success' => true, 'isFavorite' => $result]);
+}
+
 header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($_GET["action"] == "getFilter") {
@@ -49,5 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo (get_content($creds_path, $data));
     } elseif (isset($data['action']) && $data['action'] === 'toggleFavorite') {
         echo (toggle_favorite($creds_path, $data));
+    } elseif (isset($data['action']) && $data['action'] === 'checkFavorite') {
+        echo (check_favorite($creds_path, $data));
     }
 }

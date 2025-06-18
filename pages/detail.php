@@ -6,7 +6,7 @@ require_once "../lib/utils.php";
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($id <= 0) {
-    header('Location: discover.php');
+    header('Location: index.php');
     exit;
 }
 
@@ -141,8 +141,8 @@ $date = isset($menuInfo['ctime']) ? date('j F Y', strtotime($menuInfo['ctime']))
                         <?php endif; ?>
 
                         <div class="mt-auto">
-                            <button class="btn btn-primary w-100">
-                                <i class="bi bi-heart me-2"></i> Toevoegen aan favorieten
+                            <button class="fav btn btn-primary w-25 d-flex justify-content-center align-items-center">
+                                <i class="bi bi-heart"></i>
                             </button>
                         </div>
                     </div>
@@ -197,5 +197,7 @@ $date = isset($menuInfo['ctime']) ? date('j F Y', strtotime($menuInfo['ctime']))
     </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+<script src="../js/detail.js"></script>
 </body>
 </html>
+
