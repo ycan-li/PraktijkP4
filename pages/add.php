@@ -134,30 +134,34 @@ $categories = [
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label"><?php echo ucfirst($category) ?></label>
                                     <div class="tags-input <?php echo $category ?>-tags-input position-relative d-flex flex-column gap-2 border rounded p-2 bg-dark text-white"
-                                        data-type="<?php echo $category ?>">
+                                         data-type="<?php echo $category ?>">
                                         <div class="<?php echo $category ?>-selected selected d-flex flex-wrap gap-1"
-                                        data-type="<?php echo $category ?>">
+                                             data-type="<?php echo $category ?>">
                                         </div>
-                                        <input type="text"
-                                               data-type="<?php echo $category?>"
-                                               id = "<?php echo $category ?>-search"
-                                               class="search form-control form-control-sm bg-dark text-white border-secondary tag-input"
-                                               placeholder="Zoeken of aanmaken..." autocomplete="off">
+                                        <form>
+                                            <input type="text"
+                                                   data-type="<?php echo $category ?>"
+                                                   id="<?php echo $category ?>-search"
+                                                   class="search form-control form-control-sm bg-dark text-white border-secondary tag-input"
+                                                   placeholder="Zoeken of aanmaken..." autocomplete="off">
+                                            <button data-type="<?php echo $category ?>"
+                                                    type="submit" class="d-none search-button">Zoek
+                                            </button>
+                                        </form>
                                         <!-- Suggestions -->
                                         <div class="position-relative">
                                             <div class="bg-body-secondary position-absolute d-block w-100 border-0 pt-0 mx-0 rounded-3 shadow overflow-x-hidden overflow-y-auto"
                                                  style="max-height: 80px;">
-                                                <div data-type="<?php echo $category?>"
-                                                    class="<?php echo $category ?>-suggestion suggestion badge-container d-none flex-wrap gap-1 p-2">
+                                                <div data-type="<?php echo $category ?>"
+                                                     class="<?php echo $category ?>-suggestion suggestion badge-container d-none flex-wrap gap-1 p-2">
                                                     <?php if (!empty($filters[$category])): ?>
                                                         <?php foreach ($filters[$category] as $cat): ?>
-                                                            <span class="suggestion-badge badge d-flex gap-1 link-body-emphasis fs-7 bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill"
-                                                                  style="cursor: pointer;"
+                                                            <span class="suggestion-badge badge d-flex gap-1 link-body-emphasis fs-7 bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill" style="cursor: pointer;"
                                                                   data-id="<?= $cat['id'] ?>"
-                                                                  data-name="<?= htmlspecialchars($cat['name']) ?>"
+                                                                  data-name="<?= strtolower(htmlspecialchars($cat['name'])) ?>"
                                                                   data-type="<?php echo $category ?>">
-                                                        <?= htmlspecialchars($cat['name']) ?>
-                                                    </span>
+                                                                <?= htmlspecialchars($cat['name']) ?>
+                                                            </span>
                                                         <?php endforeach; ?>
                                                     <?php endif; ?>
                                                 </div>
@@ -184,6 +188,6 @@ $categories = [
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
-<script src="../js/add.js"></script>
+<script type="module" src="../js/add.js"></script>
 </body>
 </html>
