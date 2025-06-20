@@ -1,3 +1,7 @@
+/**
+ * Initializes tab button active state toggling and dropdown filters after DOM is loaded.
+ * @returns {void}
+ */
 document.addEventListener('DOMContentLoaded', function () {
     const tabButtons = document.querySelectorAll('.tab-btn');
     tabButtons.forEach(btn => {
@@ -7,6 +11,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    /**
+     * Attaches click handler to toggle visibility of a dropdown menu when its title is clicked.
+     *
+     * @param {string} titleId - ID of the element acting as dropdown title.
+     * @param {string} menuId - ID of the dropdown menu element to show or hide.
     function setupDropdownFilter(titleId, menuId) {
         const title = document.getElementById(titleId);
         const menu = document.getElementById(menuId);

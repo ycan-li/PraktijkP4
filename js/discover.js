@@ -94,6 +94,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // Functions
+    /**
+     * Adds a 'Favorites' filter button for logged-in users to filter content by favorites.
+     * @returns {void}
+     */
     function addFavoritesFilter() {
         const isLoggedIn = !!sessionStorage.getItem('userInfo');
         if (!isLoggedIn) return; // Only show to logged in users
@@ -131,7 +135,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Attach favorite toggle functionality to heart icons
+    /**
+     * Attaches click event listeners to favorite icons within cards to toggle favorite status via API.
+     * @returns {void}
+     */
     function attachFavoriteListeners() {
         // Only attach if user is logged in
         const userInfo = sessionStorage.getItem('userInfo');
@@ -192,6 +199,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Renders filter dropdowns based on server-provided filter data and sets up selection behavior.
+     * @param {Object.<string, Array>} filters - Mapping of filter categories to arrays of filter items.
+     * @returns {void}
+     */
     function renderFilters(filters) {
         const filterMap = {
             "genre": "Genre",
@@ -266,7 +278,11 @@ document.addEventListener('DOMContentLoaded', function () {
         setupFilterActionButtons();
     }
 
-    // Updates the appearance of a filter button based on selections
+    /**
+     * Updates the appearance of a filter button based on the number of selected items.
+     * @param {string} filterName - The name of the filter category.
+     * @returns {void}
+     */
     function updateFilterButtonAppearance(filterName) {
         const filterButton = document.querySelector(`#title-${filterName}`);
         if (!filterButton) return;
@@ -301,7 +317,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Set up the apply filter and clear filter buttons
+    /**
+     * Initializes the apply and clear filter action buttons to control filter state and content refresh.
+     * @returns {void}
+     */
     function setupFilterActionButtons() {
         const applyFilterButton = document.getElementById('apply-filter-button');
         const clearFilterButton = document.getElementById('clear-filter-button');
@@ -341,6 +360,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Fetches and displays content cards based on current page, selected filters, and search text.
+     * @param {number} [currentPage=1] - The page number to render.
+     * @returns {void}
+     */
     function renderContent(currentPage = 1) {
         // Get all selected filter items
         let selectedFilters = {};

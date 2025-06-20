@@ -1,3 +1,5 @@
+import {emptyPlaceholder} from "./components.js";
+
 /**
  * Trim white space characters upon both sides
  * @param {string} str
@@ -8,15 +10,8 @@ export function trimString(str) {
 }
 
 /**
- * Empty placeholder
- * @returns {string}
- */
-export function getEmptyPlaceholer() {
-    return '<span class="text-secondary empty-placeholder">¯\\_(ツ)_/¯ Leeg~</span>';
-}
-
-/**
- *
+ * Add placeholder of empty to container if there is no child in it
+ * or all children are displayed in none
  * @param {HTMLElement|NodeList|Array} parent
  * @param {function(HTMLElement):void} [callback] - Optional. Function applied to every child
  * @return {void}
@@ -43,7 +38,7 @@ export function addPlaceholderIfEmpty(parent, callback = null) {
     childrenHidden = hiddenCount === childrenCount;
 
     if (childrenCount === 0 || childrenHidden) {
-        const placeholder = getEmptyPlaceholer();
+        const placeholder = emptyPlaceholder();
         parent.insertAdjacentHTML('afterbegin', placeholder);
     } else {
         const ph = parent.querySelector('.empty-placeholder');
@@ -51,4 +46,42 @@ export function addPlaceholderIfEmpty(parent, callback = null) {
             ph.remove();
         }
     }
+}
+
+/**
+ * Test if obj iterable
+ * @param {any} obj
+ * @return {boolean}
+ */
+export function isIterable(obj) {
+    return !obj && typeof obj[Symbol.iterator] === 'function';
+}
+
+/**
+ * Iterates over an iterable object and applies a callback to each item.
+ * @param {any} iter - The iterable object to walk through.
+ * @param {(item: any) => void} callback - Function to execute for each item.
+ * @returns {void}
+ */
+export function walk(iter, callback) {
+    if (!iter && !isIterable(iter)) {
+        return;
+    }
+
+    iter.forEach(i => {
+        callback(i);
+    });
+}
+
+export function map(iter, callback) {
+    let res = [];
+    if (!iter && !isIterable(iter)) {
+        return null;
+    }
+
+    iter.forEach(i => {
+        res.push(callback(i));
+    })
+
+    return res;
 }

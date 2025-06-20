@@ -26,6 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // User is logged in
     const user = JSON.parse(userInfo);
 
+    /**
+     * Initializes favorite button functionality on the detail page after DOM is loaded.
+     * Sets up login redirect for unauthenticated users and toggle behavior for favorites.
+     * @returns {void}
+     */
+
     // Check if this menu is already a favorite
     checkFavoriteStatus();
 
@@ -95,7 +101,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Function to check and update initial favorite status
+    /**
+     * Checks and updates the favorite status of the specified menu for the current user.
+     * Sends a request to retrieve the initial favorite state and updates the button UI accordingly.
+     * @returns {void}
+     */
     function checkFavoriteStatus() {
         fetch('../controllers/endpoint.php', {
             method: 'POST',
