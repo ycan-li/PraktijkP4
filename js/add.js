@@ -1,4 +1,4 @@
-import {trimString, getEmptyPlaceholer} from './utils.js';
+import {trimString, getEmptyPlaceholer, addPlaceholderIfEmpty} from './lib.js';
 
 /**
  * @param category 'genre' or 'tag'
@@ -28,37 +28,6 @@ function toggleSuggestion(toggle = null, category = null) {
             container.classList.toggle('d-flex');
         }
     })
-}
-
-function updateTagContainer(category = null) {
-    const containers = category
-        ? document.querySelectorAll(`.tags-input .${category}-selected, .tags-input .${category}-suggestion`)
-        : document.querySelectorAll('.tags-input .selected, .tags-input .suggestion');
-    if (!containers || containers.length === 0) {
-        console.warn('No element of selected tags found');
-        return false;
-    }
-
-    containers.forEach(container => {
-        const childCount = container.children.length;
-        category = container.dataset.type;
-        if (!category) {
-            console.warn('No category found via dataset');
-            return false;
-        }
-
-        if (childCount === 0) {
-            const placeholder = getEmptyPlaceholer();
-
-            container.insertAdjacentHTML('beforeend', placeholder);
-        } else {
-            const ph = container.querySelector('.empty-placeholder');
-            if (ph) {
-                ph.remove();
-            }
-        }
-    })
-    return true;
 }
 
 /**
@@ -124,15 +93,13 @@ function toggleSelected(el) {
     }
 
     el.remove();
-
-    // Update selected to add/remove '+new' tag
-    updateTagContainer(category);
+    addPlaceholderIfEmpty([parent, target]);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     // Init tags input
-    updateTagContainer();
+    addPlaceholderIfEmpty(document.querySelectorAll('.tags-input .suggestion, .tags-input .selected'))
     // (no needed due already hide by default in php) Hide suggestion list
     // toggleSuggestion('hide');
     // Init suggestion badges
@@ -190,28 +157,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     // console.warn('No badges found');
                     return;
                 }
-
-                const re = new RegExp('^' + userInput, 'i');
-                let count = 0;
-                badges.forEach(badge => {
-                    if (!re.test(badge.dataset.name)) {
-                        badge.classList.add('d-none');
-                        count++;
-                    } else {
-                        badge.classList.remove('d-none');
-                    }
-                })
                 const container = document.querySelector(`.suggestion[data-type="${category}"]`);
-                const ph = container.querySelector('.empty-placeholder');
-                if (count === badges.length) {
-                    if (!ph) {
-                        container.insertAdjacentHTML('afterbegin', getEmptyPlaceholer());
+
+                addPlaceholderIfEmpty(container, (child) => {
+                    const re = new RegExp('^' + userInput, 'i');
+                    if (!re.test(child.dataset.name)) {
+                        child.classList.add('d-none');
+                    } else {
+                        child.classList.remove('d-none');
                     }
-                } else {
-                    if (ph) {
-                        ph.remove();
-                    }
-                }
+                });
+
             }, 500);
         })
     })
@@ -242,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             let existed = false;
+            let ok = true;
             const badges = document.querySelectorAll(
                 `.tags-input[data-type="${category}"] .suggestion-badge`);
             for (const badge of badges) {
@@ -250,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         toggleSelected(badge);
                     } else {
                         // TODO notification
+                        ok = false;
                         console.warn('tag already in selected');
                     }
                     existed = true;
@@ -258,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Post
-            let ok = true;
             if (!existed) {
                 const selected = document.querySelector(`.tags-input .${category}-selected`)
                 if (!selected) {
@@ -278,12 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
 
                 selected.insertAdjacentElement('beforeend', tag);
-                ok = updateTagContainer(category);
+                addPlaceholderIfEmpty(selected);
             }
             if (ok) {
                 input.value = '';
-            } else {
-                console.warn('Failed to update selected container');
             }
         })
     })
