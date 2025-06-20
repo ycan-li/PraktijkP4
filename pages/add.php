@@ -150,10 +150,10 @@ $categories = [
                                         </form>
                                         <!-- Suggestions -->
                                         <div class="position-relative">
-                                            <div class="bg-body-secondary position-absolute d-block w-100 border-0 pt-0 mx-0 rounded-3 shadow overflow-x-hidden overflow-y-auto"
-                                                 style="max-height: 80px;">
+                                            <div class="bg-body-secondary position-absolute d-block w-100 border-0 pt-0 mx-0 rounded-3 shadow overflow-x-hidden overflow-y-auto position-relative z-1"
+                                                 style="max-height: calc(100px + 5dvh);">
                                                 <div data-type="<?php echo $category ?>"
-                                                     class="<?php echo $category ?>-suggestion suggestion badge-container d-none flex-wrap gap-1 p-2">
+                                                     class="<?php echo $category ?>-suggestion suggestion badge-container d-none flex-wrap  gap-1 p-2 h-100">
                                                     <?php if (!empty($filters[$category])): ?>
                                                         <?php foreach ($filters[$category] as $cat): ?>
                                                             <span class="suggestion-badge badge d-flex gap-1 link-body-emphasis fs-7 bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill" style="cursor: pointer;"
