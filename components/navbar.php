@@ -9,7 +9,7 @@
             </button>
 
             <!-- Center: Brand logo -->
-            <a class="navbar-brand m-0" href="#">WEJV</a>
+            <a class="navbar-brand m-0" href="../pages/index.php">WEJV</a>
 
             <!-- Right: Mobile search and account -->
             <div class="d-flex">
@@ -40,7 +40,7 @@
             <!-- Right: Navigation links -->
             <ul class="navbar-nav flex-row me-2">
                 <li class="nav-item px-2"><a class="nav-link" href="index.php">Home</a></li>
-                <li class="nav-item px-2"><a class="nav-link" href="add.php">Toevoeg</a></li>
+                <li class="nav-item px-2"><a class="nav-link" href="upsert.php">Toevoeg</a></li>
             </ul>
 
             <!-- Account button -->
@@ -63,7 +63,7 @@
             <div class="offcanvas-body">
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="add.php">Toevoeg</a></li>
+                    <li class="nav-item"><a class="nav-link" href="upsert.php">Toevoeg</a></li>
                 </ul>
             </div>
         </div>
@@ -266,11 +266,11 @@
                     dropdownMenu.innerHTML = `
                     <div class="px-3 py-2 d-flex align-items-center">
                         <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2" style="width:40px;height:40px;">
-                            <span class="text-white">${userInfo.first_name.charAt(0)}${userInfo.last_name.charAt(0)}</span>
+                            <span class="text-white">${userInfo.firstName.charAt(0)}${userInfo.lastName.charAt(0)}</span>
                         </div>
                         <div>
-                            <strong class="text-white">${userInfo.first_name} ${userInfo.last_name}</strong><br>
-                            <small class="text-muted">${userInfo.username}</small>
+                            <strong class="text-white">${userInfo.firstName} ${userInfo.lastName}</strong><br>
+                            <small class="text-muted">${userInfo.name}</small>
                         </div>
                     </div>
                     <hr class="dropdown-divider border-secondary my-2">
@@ -285,7 +285,7 @@
                     // Change button appearance
                     button.classList.remove('btn-outline-light');
                     button.classList.add('btn-primary');
-                    button.innerHTML = `<span>${userInfo.first_name.charAt(0)}${userInfo.last_name.charAt(0)}</span>`;
+                    button.innerHTML = `<span>${userInfo.firstName.charAt(0)}${userInfo.lastName.charAt(0)}</span>`;
                 }
             });
 
@@ -375,6 +375,7 @@
                             // Close the modal
                             const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                             loginModal.hide();
+                            window.location.reload();
 
                             // Update UI
                             checkLoginStatus();
@@ -437,7 +438,7 @@
                     },
                     body: JSON.stringify({
                         action: 'register',
-                        first_name: first,
+                        first_name: firstName,
                         last_name: lastName,
                         username: username,
                         email: email,

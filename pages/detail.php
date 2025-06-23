@@ -51,6 +51,13 @@ if (!empty($menuInfo['ingredients'])) {
 
 // Format date
 $date = isset($menuInfo['ctime']) ? date('j F Y', strtotime($menuInfo['ctime'])) : 'Onbekend';
+
+// User session for authorization
+session_start();
+$user = $_SESSION['user'] ?? null;
+$isAdmin = $user && isset($user['role']) && $user['role'] === 'admin';
+$isAuthor = $user && isset($user['author_id'], $menuInfo['author_id']) && (int)$user['author_id'] === (int)$menuInfo['author_id'];
+$canEditDelete = $isAdmin || $isAuthor;
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
@@ -96,7 +103,7 @@ $date = isset($menuInfo['ctime']) ? date('j F Y', strtotime($menuInfo['ctime']))
                                     <i class="bi bi-clock-history fs-4"></i>
                                     <div>
                                         <p class="mb-0 text-secondary-emphasis">Bereidingstijd</p>
-                                        <p class="fs-5 fw-bold mb-0"><?= $menuInfo['prepare_time'] ? $menuInfo['prepare_time'] . ' min' : 'n.v.t.' ?></p>
+                                        <p class="fs-5 fw-bold mb-0"><?= $menuInfo['prepareTime'] ? $menuInfo['prepareTime'] . ' min' : 'n.v.t.' ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -105,7 +112,7 @@ $date = isset($menuInfo['ctime']) ? date('j F Y', strtotime($menuInfo['ctime']))
                                     <i class="bi bi-people fs-4"></i>
                                     <div>
                                         <p class="mb-0 text-secondary-emphasis">Aantal personen</p>
-                                        <p class="fs-5 fw-bold mb-0"><?= $menuInfo['person_num'] ?: 'n.v.t.' ?></p>
+                                        <p class="fs-5 fw-bold mb-0"><?= $menuInfo['personNum'] ?: 'n.v.t.' ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -140,10 +147,18 @@ $date = isset($menuInfo['ctime']) ? date('j F Y', strtotime($menuInfo['ctime']))
                             </div>
                         <?php endif; ?>
 
-                        <div class="mt-auto">
-                            <button class="fav btn btn-primary w-25 d-flex justify-content-center align-items-center">
-                                <i class="bi bi-heart"></i>
+                        <div class="mt-auto d-flex gap-2 align-items-center">
+                            <button class="fav btn btn-secondary">
+                                <i class="bi bi-heart"></i> Bewaren
                             </button>
+                            <?php if ($canEditDelete): ?>
+                                <a href="upsert.php?id=<?= $id ?>" class="btn btn-warning ms-2" id="edit-recipe-btn">
+                                    <i class="upsert bi bi-pencil-square"></i> Bewerken
+                                </a>
+                                <button class="btn btn-danger ms-2" id="delete-recipe-btn">
+                                    <i class="delete bi bi-trash"></i> Verwijderen
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -200,4 +215,3 @@ $date = isset($menuInfo['ctime']) ? date('j F Y', strtotime($menuInfo['ctime']))
 <script src="../js/detail.js"></script>
 </body>
 </html>
-

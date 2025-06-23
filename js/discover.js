@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!userInfo) return;
 
         const user = JSON.parse(userInfo);
-        const heartIcons = document.querySelectorAll('.toolbar li');
+        const heartIcons = document.querySelectorAll('.toolbar .fav-btn');
 
         heartIcons.forEach(icon => {
             // Prevent multiple event listeners
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const filterMap = {
             "genre": "Genre",
             "tag": "Tag",
-            "prepare_time_group": "Voorbereid",
+            "prepareTimeGroup": "Voorbereid",
             "author": "Auteur"
         }
         const filtersContainer = document.querySelector('#filter-container');
@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-3 py-3 py-lg-4">
                         </div>
                     `
-                    cardContainer.insertAdjacentHTML('afterbegin', rowTemplate);
+                    cardContainer.insertAdjacentHTML('beforeend', rowTemplate);
                     const row = cardContainer.firstElementChild;
                     for (let itemIndex = 0; itemIndex < NUM_PER_ROW; itemIndex++) {
                         if (count >= total || count >= menuData.length) break;
@@ -642,11 +642,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 </li>
                                                 <li class="d-flex align-items-center gap-1">
                                                     <i class="bi bi-clock-history"></i>
-                                                    <small>${menuItem['prepare_time'] ? menuItem['prepare_time'] + ' min' : 'n.t.v'}</small></li>
+                                                    <small>${menuItem['prepareTime'] ? menuItem['prepareTime'] + ' min' : 'n.t.v'}</small></li>
                                             </ul>
                                         </div>
                                         <ul class="toolbar d-flex flex-row justify-content-end align-items-center list-unstyled mb-0">
-                                            <li style="cursor:pointer;" class="position-relative z-2">
+                                            <li style="cursor:pointer;" class="fav-btn position-relative z-2">
                                                 ${heartIcon}
                                             </li>
                                         </ul>
@@ -684,13 +684,79 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             tagContainer.insertAdjacentHTML('afterbegin', tagListTemplate);
                         }
-
-                        count++;
+                        // Add delete button for admin or author
+                        const currentUserInfo = sessionStorage.getItem('userInfo');
+                        if (currentUserInfo) {
+                            const currentUser = JSON.parse(currentUserInfo);
+                            if (currentUser.role === 'admin' || currentUser.author_id === menuItem['author_id']) {
+                                const deleteLi = document.createElement('li');
+                                deleteLi.style.cursor = 'pointer';
+                                deleteLi.classList.add('delete-btn');
+                                deleteLi.classList.add('position-relative');
+                                deleteLi.classList.add('z-2');
+                                deleteLi.innerHTML = '<i class="bi bi-trash"></i>';
+                                const toolbar = card.querySelector('.toolbar');
+                                toolbar.appendChild(deleteLi);
+                                // Add edit button for author only
+                                if (currentUser.author_id === menuItem['author_id']) {
+                                    const editLi = document.createElement('li');
+                                    editLi.style.cursor = 'pointer';
+                                    editLi.classList.add('edit-btn', 'position-relative', 'z-2', 'ms-2');
+                                    editLi.innerHTML = '<i class="bi bi-pencil"></i>';
+                                    editLi.addEventListener('click', (e) => {
+                                        e.preventDefault(); e.stopPropagation();
+                                        window.location.href = `upsert.php?id=${menuItem['id']}`;
+                                    });
+                                    toolbar.appendChild(editLi);
+                                }
+                            }
+                        }
+                         count++;
                     }
                 }
 
-                // Attach favorite listeners after rendering cards
+                // Attach favorite and delete listeners after rendering cards
                 attachFavoriteListeners();
+                attachDeleteListeners();
+
+            }); // end data.then
+        }
+
+/**
+ * Attaches click event listeners to delete buttons in cards to remove recipes via API.
+ */
+    function attachDeleteListeners() {
+        const userInfo = sessionStorage.getItem('userInfo');
+        if (!userInfo) return;
+        document.querySelectorAll('.toolbar .delete-btn').forEach(btn => {
+            if (btn.dataset.hasListener === 'true') return;
+            btn.dataset.hasListener = 'true';
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                if (!confirm('Weet je zeker dat je dit recept wilt verwijderen?')) return;
+                const card = this.closest('.card');
+                const col = card.closest('.col');
+                const menuId = card.dataset.id;
+                const user = JSON.parse(userInfo);
+                const fd = new FormData();
+                fd.append('id', menuId);
+                fd.append('user_id', user.id);
+                fd.append('role', user.role || '');
+                fetch('../controllers/endpoint.php?action=deleteRecipe', { method: 'POST', body: fd })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (col) {
+                                col.remove();
+                            } else {
+                                card.remove();
+                            }
+                        } else {
+                            alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
+                        }
+                    })
+                    .catch(() => alert('Verwijderen mislukt door een netwerkfout.'));
             });
+        });
     }
 });

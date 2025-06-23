@@ -28,7 +28,7 @@ $categories = [
     <link href="../css/style.css" rel="stylesheet">
 </head>
 <body>
-<?php include "../components/navbar.php"; ?>
+<?php //include "../components/navbar.php"; ?>
 
 <main class="container py-4">
     <div class="row justify-content-center">
@@ -138,7 +138,7 @@ $categories = [
                                         <div class="<?php echo $category ?>-selected selected d-flex flex-wrap gap-1"
                                              data-type="<?php echo $category ?>">
                                         </div>
-                                        <form>
+                                        <form onsubmit="return false;">
                                             <input type="text"
                                                    data-type="<?php echo $category ?>"
                                                    id="<?php echo $category ?>-search"
@@ -156,7 +156,8 @@ $categories = [
                                                      class="<?php echo $category ?>-suggestion suggestion badge-container d-none flex-wrap  gap-1 p-2 h-100">
                                                     <?php if (!empty($filters[$category])): ?>
                                                         <?php foreach ($filters[$category] as $cat): ?>
-                                                            <span class="suggestion-badge badge d-flex gap-1 link-body-emphasis fs-7 bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill" style="cursor: pointer;"
+                                                            <span class="suggestion-badge badge d-flex gap-1 link-body-emphasis fs-7 bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill"
+                                                                  style="cursor: pointer;"
                                                                   data-id="<?= $cat['id'] ?>"
                                                                   data-name="<?= strtolower(htmlspecialchars($cat['name'])) ?>"
                                                                   data-type="<?php echo $category ?>">
@@ -171,14 +172,14 @@ $categories = [
                                 </div>
                             <?php endforeach; ?>
                         </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="cancel-submit-receipt-form btn btn-secondary"
+                                    onclick="window.location.href='index.php'">
+                                Annuleren
+                            </button>
+                            <button type="submit" class="submit-receipt-form btn btn-primary">Recept Toevoegen</button>
+                        </div>
                     </section>
-
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <button type="button" class="btn btn-secondary" onclick="window.location.href='index.php'">
-                            Annuleren
-                        </button>
-                        <button type="submit" class="btn btn-primary">Recept Toevoegen</button>
-                    </div>
                 </form>
             </div>
         </div>
@@ -191,3 +192,4 @@ $categories = [
 <script type="module" src="../js/upsert.js"></script>
 </body>
 </html>
+

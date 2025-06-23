@@ -63,8 +63,17 @@ function handleLogin($wejv, $data) {
                 session_start();
             }
 
-            // Store user ID in session
+            // Also fetch this user's author_id mapping
+            $authorId = $wejv->getAuthorId($userId);
+            if ($authorId !== false) {
+                $userInfo['author_id'] = $authorId;
+            } else {
+                $userInfo['author_id'] = null;
+            }
+
+            // Store user ID and info in session
             $_SESSION['user_id'] = $userId;
+            $_SESSION['user'] = $userInfo;
 
             // Return success with user info
             echo json_encode([

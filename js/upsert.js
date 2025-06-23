@@ -3,6 +3,47 @@ import {
     addPlaceholderIfEmpty,
     walk
 } from './lib.js';
+import { ingredientRowTemplate } from './components.js';
+// Get recipe ID from URL if editing
+const urlParams = new URLSearchParams(window.location.search);
+const recipeId = urlParams.get('id');
+
+
+// Load recipe data into form if editing
+async function loadRecipe() {
+    if (!recipeId) return;
+    try {
+        const res = await fetch(`../controllers/endpoint.php?action=getRecipe&id=${recipeId}`);
+        const result = await res.json();
+        if (result.success && result.data) {
+            const r = result.data;
+            document.getElementById('name').value = r.name || '';
+            document.getElementById('prepare_time').value = r.prepareTime || '';
+            document.getElementById('person_num').value = r.personNum || '';
+            document.getElementById('description').value = r.description || '';
+            document.getElementById('preparation').value = r.preparation || '';
+            // Populate existing selected genres
+            const genresArr = Array.isArray(r.genre) ? r.genre : [];
+            genresArr.forEach(name => {
+                const badge = document.querySelector(`.genre-suggestion .suggestion-badge[data-name="${name.trim().toLowerCase()}"]`);
+                if (badge) toggleSelected(badge);
+            });
+            // Populate existing selected tags
+            const tagsArr = Array.isArray(r.tag) ? r.tag : [];
+            tagsArr.forEach(name => {
+                const badge = document.querySelector(`.tag-suggestion .suggestion-badge[data-name="${name.trim().toLowerCase()}"]`);
+                if (badge) toggleSelected(badge);
+            });
+            // Update page title and button text
+            const titleEl = document.querySelector('h1');
+            if (titleEl) titleEl.textContent = 'Bewerk Recept';
+            const submitBtn = document.querySelector('.submit-receipt-form');
+            if (submitBtn) submitBtn.textContent = 'Recept Bijwerken';
+        }
+    } catch (e) {
+        console.error('Failed to load recipe:', e);
+    }
+}
 
 /**
  * Toggles visibility of suggestion elements.
@@ -255,7 +296,118 @@ function initTagInputs() {
     })
 }
 
+/**
+ * Initializes the ingredient add/remove button functionality.
+ *
+ * - Adds a new ingredient row to the ingredients container when the add button is clicked.
+ * - Allows removal of an ingredient row when the remove button is clicked, but keeps at least one row.
+ *
+ * @returns {void}
+ */
+function initIngredientBtn() {
+    const ingredientsContainer = document.getElementById('ingredients-container');
+    const addIngredientBtn = document.getElementById('add-ingredient');
+    if (!ingredientsContainer || !addIngredientBtn) return;
+
+    // Add new ingredient row
+    addIngredientBtn.addEventListener('click', () => {
+        ingredientsContainer.insertAdjacentHTML('beforeend', ingredientRowTemplate());
+    });
+
+    // Remove ingredient row
+    ingredientsContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.remove-ingredient')) {
+            const row = e.target.closest('.ingredient-row');
+            if (row && ingredientsContainer.children.length > 1) {
+                row.remove();
+            }
+        }
+    });
+}
+
+/**
+ * Initializes the submit button for the recipe form.
+ * Handles form validation, collects all form data (including dynamic ingredients and tags),
+ * serializes ingredients to JSON, and submits via AJAX. Shows success/error alerts.
+ *
+ * @returns {void}
+ */
+function initSubmitBtn() {
+    const form = document.getElementById('add-recipe-form');
+    if (!form) return;
+    const successAlert = document.getElementById('success-alert');
+    const errorAlert = document.getElementById('error-alert');
+    const ingredientsJson = document.getElementById('ingredients-json');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        form.classList.add('was-validated');
+        if (!form.checkValidity()) return;
+
+        // Collect ingredients
+        const ingredientRows = form.querySelectorAll('.ingredient-row');
+        const ingredients = [];
+        ingredientRows.forEach(row => {
+            const amount = row.querySelector('input[type="number"]').value.trim();
+            const unit = row.querySelectorAll('input[type="text"]')[0].value.trim();
+            const name = row.querySelectorAll('input[type="text"]')[1].value.trim();
+            if (amount && unit && name) {
+                ingredients.push(`${amount} ${unit} ${name}`);
+            } else if (amount && name) {
+                ingredients.push(`${amount} ${name}`);
+            } else if (name) {
+                ingredients.push(name);
+            }
+        });
+        ingredientsJson.value = ingredients.join('; ');
+
+        // Collect tags/genres
+        const tags = [];
+        document.querySelectorAll('.tag-tags-input .selected .suggestion-badge').forEach(badge => {
+            tags.push(badge.textContent.trim());
+        });
+        const genres = [];
+        document.querySelectorAll('.genre-tags-input .selected .suggestion-badge').forEach(badge => {
+            genres.push(badge.textContent.trim());
+        });
+
+        // Prepare form data
+        const formData = new FormData(form);
+        formData.set('ingredients', ingredientsJson.value);
+        formData.set('tags', JSON.stringify(tags));
+        formData.set('genres', JSON.stringify(genres));
+
+        // AJAX submit
+        const action = recipeId ? 'updateRecipe' : 'addRecipe';
+        if (recipeId) formData.append('id', recipeId);
+        try {
+            const response = await fetch(`../controllers/endpoint.php?action=${action}`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                successAlert.classList.remove('d-none');
+                errorAlert.classList.add('d-none');
+                setTimeout(() => {
+                    window.location.href = `detail.php?id=${recipeId || result.id}`;
+                }, 1500);
+            } else {
+                errorAlert.classList.remove('d-none');
+                successAlert.classList.add('d-none');
+            }
+        } catch (err) {
+            errorAlert.classList.remove('d-none');
+            successAlert.classList.add('d-none');
+        }
+    });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    loadRecipe();
+    initIngredientBtn();
     initTagInputs();
+    initSubmitBtn();
 })

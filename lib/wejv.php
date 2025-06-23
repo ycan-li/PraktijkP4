@@ -27,9 +27,9 @@ class Wejv
         $this->conn = new PDO($dsn, $creds['user'], $creds['password']);
         $this->join_sql = "
             LEFT JOIN author a ON m.author_id = a.id
-            LEFT JOIN menu_info_genre mg ON m.id = mg.menu_info_id
+            LEFT JOIN menu_genre mg ON m.id = mg.menu_id
             LEFT JOIN genre g ON mg.genre_id = g.id
-            LEFT JOIN menu_info_tag mt ON m.id = mt.menu_info_id
+            LEFT JOIN menu_tag mt ON m.id = mt.menu_id
             LEFT JOIN tag t ON mt.tag_id = t.id
         ";
     }
@@ -51,7 +51,7 @@ class Wejv
             "genre",
             "author",
             "tag",
-            "prepare_time_group",
+            "prepareTimeGroup",
         ];
 
         $res = [];
@@ -80,10 +80,10 @@ class Wejv
      *     author: string|null,
      *     genre: array<int, string>,
      *     tag: array<int, string>,
-     *     prepare_time: int,
+     *     prepareTime: int,
      *     img: string|null
      *   }>
-     * } Returns an array with total count and data array of cards. Each card contains id, name, author, genre, tag, prepare_time, and img (base64 or null).
+     * } Returns an array with total count and data array of cards. Each card contains id, name, author, genre, tag, prepareTime, and img (base64 or null).
      */
     public function fetchCards(array $filters = [], string $search = "", int $start = 0, int $count = 24, Sort|int $sort = Sort::CTIME_DESC): array
     {
@@ -135,8 +135,8 @@ class Wejv
 
         // For showing favorite status of each item
         if ($favFilter) {
-            $join_sql .= " LEFT JOIN fav f ON m.id = f.menu_info_id";
-//            $join_sql .= " LEFT JOIN fav f ON m.id = f.menu_info_id AND f.user_id = :favUserId";
+            $join_sql .= " LEFT JOIN fav f ON m.id = f.menu_id";
+            //            $join_sql .= " LEFT JOIN fav f ON m.id = f.menu_id AND f.user_id = :favUserId";
         }
 
         // For filtering by favorites
@@ -149,13 +149,13 @@ class Wejv
         }
 
         $sql = "
-        SELECT m.id, m.name, m.prepare_time, m.img,
+        SELECT m.id, m.name, m.prepareTime, m.img, m.author_id,
                a.name AS author,
                " . ($favFilter ? "IF(f.user_id IS NOT NULL, 1, 0) AS is_favorite," : "") . "
             GROUP_CONCAT(DISTINCT g.name) AS genres,
             GROUP_CONCAT(DISTINCT t.name) AS tags,
             ($match_count_sql) AS match_count
-        FROM menu_info m
+        FROM menu m
         $join_sql
         $where_sql
         GROUP BY m.id
@@ -176,7 +176,7 @@ class Wejv
         // Count query with same filters
         $countSql = "
         SELECT COUNT(DISTINCT m.id)
-        FROM menu_info m
+        FROM menu m
         $join_sql
         $where_sql
     ";
@@ -197,11 +197,11 @@ class Wejv
     public function fetchInfo(int $id): array
     {
         $sql = "
-            SELECT m.name, m.prepare_time, m.img, m.person_num, m.ingredients, m.description, m.preparation, m.ctime,
+            SELECT m.author_id AS author_id, m.name, m.prepareTime, m.img, m.personNum, m.ingredients, m.description, m.preparation, m.ctime,
                    a.name AS author,
             GROUP_CONCAT(DISTINCT g.name) AS genres,
             GROUP_CONCAT(DISTINCT t.name) AS tags
-            FROM menu_info m
+            FROM menu m
             $this->join_sql
             WHERE m.id = :id
         ";
@@ -233,7 +233,7 @@ class Wejv
 
             // Insert user and get ID
             $password_hash = password_hash($password, PASSWORD_BCRYPT);
-            $stmt = $this->conn->prepare("INSERT INTO user (username, email, password_hash, first_name, last_name) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $this->conn->prepare("INSERT INTO user (name, email, passwordHash, firstName, lastName) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$username, $email, $password_hash, $first_name, $last_name]);
             $userId = $this->conn->lastInsertId();
 
@@ -258,14 +258,14 @@ class Wejv
     public function login(string $name, string $password): int|bool
     {
         $stmt = $this->conn->prepare("
-            SELECT id, username, password_hash FROM user WHERE username = ? OR email = ?
+            SELECT id, name, passwordHash FROM user WHERE name = ? OR email = ?
         ");
 
         $stmt->execute([$name, $name]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($password, $user['password_hash'])) {
-            $stmt = $this->conn->prepare("UPDATE user SET last_login = NOW() WHERE id = ?");
+        if ($user && password_verify($password, $user['passwordHash'])) {
+            $stmt = $this->conn->prepare("UPDATE user SET lastLogin = NOW() WHERE id = ?");
             $stmt->execute([$user['id']]);
             return $user['id'];
         }
@@ -276,7 +276,7 @@ class Wejv
     public function fetchUserInfo(int $id): array|false
     {
         $stmt = $this->conn->prepare("
-            SELECT id, username, email, first_name, last_name, role FROM user WHERE id = ?
+            SELECT id, name, email, firstName, lastName, role FROM user WHERE id = ?
         ");
         $stmt->execute([$id]);
         $info = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -297,18 +297,18 @@ class Wejv
     public function toggleFavorite(int $userId, int $menuId): bool
     {
         // Check if already favorited
-        $stmt = $this->conn->prepare("SELECT 1 FROM fav WHERE user_id = ? AND menu_info_id = ?");
+        $stmt = $this->conn->prepare("SELECT 1 FROM fav WHERE user_id = ? AND menu_id = ?");
         $stmt->execute([$userId, $menuId]);
         $exists = $stmt->fetchColumn();
 
         if ($exists) {
             // Remove favorite
-            $stmt = $this->conn->prepare("DELETE FROM fav WHERE user_id = ? AND menu_info_id = ?");
+            $stmt = $this->conn->prepare("DELETE FROM fav WHERE user_id = ? AND menu_id = ?");
             $stmt->execute([$userId, $menuId]);
             return false;
         } else {
             // Add favorite
-            $stmt = $this->conn->prepare("INSERT INTO fav (user_id, menu_info_id) VALUES (?, ?)");
+            $stmt = $this->conn->prepare("INSERT INTO fav (user_id, menu_id) VALUES (?, ?)");
             $stmt->execute([$userId, $menuId]);
             return true;
         }
@@ -323,7 +323,7 @@ class Wejv
      */
     public function isFavorite(int $userId, int $menuId): bool
     {
-        $stmt = $this->conn->prepare("SELECT 1 FROM fav WHERE user_id = ? AND menu_info_id = ?");
+        $stmt = $this->conn->prepare("SELECT 1 FROM fav WHERE user_id = ? AND menu_id = ?");
         $stmt->execute([$userId, $menuId]);
         return (bool)$stmt->fetchColumn();
     }
@@ -336,7 +336,7 @@ class Wejv
      */
     public function getUserFavorites(int $userId): array
     {
-        $stmt = $this->conn->prepare("SELECT menu_info_id FROM fav WHERE user_id = ?");
+        $stmt = $this->conn->prepare("SELECT menu_id FROM fav WHERE user_id = ?");
         $stmt->execute([$userId]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
@@ -344,7 +344,7 @@ class Wejv
     /**
      * Insert a new menu item into the database
      *
-     * @param array $menuData Array containing menu data (name, prepare_time, person_num, author_id, description, preparation, ingredients, img, genres, tags)
+     * @param array $menuData Array containing menu data (name, prepareTime, person_num, author_id, description, preparation, ingredients, img, genres, tags)
      * @return int The ID of the newly created menu item
      * @throws Exception If the insertion fails
      */
@@ -353,16 +353,16 @@ class Wejv
         try {
             $this->conn->beginTransaction();
 
-            // Insert into menu_info table
+            // Insert into menu table
             $stmt = $this->conn->prepare("
-                INSERT INTO menu_info (name, prepare_time, person_num, author_id, description, preparation, ingredients, img)
+                INSERT INTO menu (name, prepareTime, personNum, author_id, description, preparation, ingredients, img)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $stmt->execute([
                 $menuData['name'],
-                $menuData['prepare_time'],
-                $menuData['person_num'],
+                $menuData['prepareTime'],
+                $menuData['personNum'],
                 $menuData['author_id'],
                 $menuData['description'],
                 $menuData['preparation'],
@@ -384,7 +384,7 @@ class Wejv
                 }
 
                 $stmt = $this->conn->prepare("
-                    INSERT INTO menu_info_genre (menu_info_id, genre_id)
+                    INSERT INTO menu_genre (menu_id, genre_id)
                     VALUES " . implode(',', $genrePlaceholders)
                 );
 
@@ -403,7 +403,7 @@ class Wejv
                 }
 
                 $stmt = $this->conn->prepare("
-                    INSERT INTO menu_info_tag (menu_info_id, tag_id)
+                    INSERT INTO menu_tag (menu_id, tag_id)
                     VALUES " . implode(',', $tagPlaceholders)
                 );
 
@@ -432,5 +432,18 @@ class Wejv
                 $row['img'] = base64_encode($row['img']);
             }
         }
+    }
+
+    /**
+     * Retrieves the author_id associated with a given user.
+     * @param int $userId
+     * @return int|false Author ID or false if not found.
+     */
+    public function getAuthorId(int $userId): int|false
+    {
+        $stmt = $this->conn->prepare("SELECT author_id FROM user_author WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $authorId = $stmt->fetchColumn();
+        return $authorId !== false ? (int)$authorId : false;
     }
 }

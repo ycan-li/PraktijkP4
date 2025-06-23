@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Get the favorite button
-    const favoriteButton = document.querySelector('.fav.btn-primary');
+    const favoriteButton = document.querySelector('.fav.btn');
     if (!favoriteButton) return;
 
     // Get menu ID from the URL
@@ -47,13 +47,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isFilled) {
             heartIcon.classList.remove('bi-heart-fill');
             heartIcon.classList.add('bi-heart');
-            this.classList.remove('btn-danger');
-            this.classList.add('btn-primary');
+            this.classList.remove('btn-primary');
+            this.classList.add('btn-secondary');
         } else {
             heartIcon.classList.remove('bi-heart');
             heartIcon.classList.add('bi-heart-fill');
-            this.classList.remove('btn-primary');
-            this.classList.add('btn-danger');
+            this.classList.remove('btn-secondary');
+            this.classList.add('btn-primary');
         }
 
         // Send request to toggle favorite
@@ -90,12 +90,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isFilled) {
                 heartIcon.classList.remove('bi-heart');
                 heartIcon.classList.add('bi-heart-fill');
-                favoriteButton.classList.remove('btn-primary');
+                favoriteButton.classList.remove('btn-secondary');
                 favoriteButton.classList.add('btn-danger');
             } else {
                 heartIcon.classList.remove('bi-heart-fill');
                 heartIcon.classList.add('bi-heart');
-                favoriteButton.classList.remove('btn-danger');
+                favoriteButton.classList.remove('btn-secondary');
                 favoriteButton.classList.add('btn-primary');
             }
         });
@@ -123,12 +123,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 const heartIcon = favoriteButton.querySelector('i.bi');
                 heartIcon.classList.remove('bi-heart');
                 heartIcon.classList.add('bi-heart-fill');
-                favoriteButton.classList.remove('btn-primary');
-                favoriteButton.classList.add('btn-danger');
+                favoriteButton.classList.remove('btn-secondary');
+                favoriteButton.classList.add('btn-primary');
             }
         })
         .catch(err => {
             console.error('Error checking favorite status:', err);
+        });
+    }
+
+    // --- Edit/Delete Button Logic ---
+    const editBtn = document.getElementById('edit-recipe-btn');
+    const deleteBtn = document.getElementById('delete-recipe-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!confirm('Weet je zeker dat je dit recept wilt verwijderen?')) return;
+            fetch('../controllers/endpoint.php?action=deleteRecipe', {
+                method: 'POST',
+                headers: { },
+                body: (() => {
+                    const fd = new FormData();
+                    fd.append('id', menuId);
+                    // Optionally add user info for backend auth
+                    const userInfo = sessionStorage.getItem('userInfo');
+                    if (userInfo) {
+                        const user = JSON.parse(userInfo);
+                        fd.append('user_id', user.id);
+                        fd.append('role', user.role || '');
+                    }
+                    return fd;
+                })()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Recept succesvol verwijderd!');
+                    window.location.href = 'index.php';
+                } else {
+                    alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
+                }
+            })
+            .catch(() => alert('Verwijderen mislukt door een netwerkfout.'));
         });
     }
 });
