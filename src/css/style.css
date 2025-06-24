@@ -1,0 +1,13 @@
+@import url("preset.css");
+
+* {
+    box-sizing: border-box;
+}
+
+.icon {
+    font-family: 'bootstrap-icons', sans-serif;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}

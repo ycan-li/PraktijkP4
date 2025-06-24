@@ -9,14 +9,17 @@
             </button>
 
             <!-- Center: Brand logo -->
-            <a class="navbar-brand m-0" href="../pages/index.php">WEJV</a>
+            <a class="navbar-brand m-0" href="../pages/home.php">WEJV</a>
 
             <!-- Right: Mobile search and account -->
-            <div class="d-flex">
-                <a href="#search-section" class="btn btn-outline-light me-2">
+            <div class="d-flex gap-2 align-items-center">
+                <a href="#search-section"
+                   class="d-flex justify-content-center rounded-circle btn btn-outline-light ratio-1x1 h-100 w-auto border-0"
+                   style="aspect-ratio: 1/1;">
                     <i class="bi bi-search"></i>
                 </a>
-                <button id="mobile-account-button" class="btn btn-outline-light rounded-circle" type="button"
+                <button id="mobile-account-button" class="btn btn-outline-light rounded-circle ratio-1x1 h-100 w-auto" type="button"
+                        style="aspect-ratio: 1/1;"
                         data-bs-toggle="modal" data-bs-target="#loginModal">
                     <i class="bi bi-person"></i>
                 </button>
@@ -24,51 +27,56 @@
         </div>
 
         <!-- Desktop view structure - hidden on mobile -->
-        <div class="d-none d-lg-flex align-items-center w-100">
-            <!-- Left: Brand logo -->
-            <a class="navbar-brand" href="#">WEJV</a>
+        <div class="d-none d-lg-flex justify-content-between align-items-center w-100">
+            <div class="right d-flex justify-content-start align-items-center flex-grow-1">
+                <!-- Left: Brand logo -->
+                <a class="navbar-brand" href="../pages/home.php">WEJV</a>
 
-            <!-- Center: Search form -->
-            <div class="flex-grow-1 mx-3" style="max-width: 500px;">
-                <form class="d-flex w-100" role="search" id="navbar-search-form">
-                    <input id="navbar-search-box" class="form-control me-2" type="search" placeholder="Zoek..."
-                           aria-label="Zoek">
-                    <button id="navbar-search-button" class="btn btn-primary" type="submit">Zoeken</button>
-                </form>
-            </div>
+                <!-- Center: Search form -->
+                <div class="flex-grow-1 mx-3" style="max-width: 500px;">
+                    <form class="d-flex w-100" role="search" id="navbar-search-form">
+                        <input id="navbar-search-box" class="form-control me-2" type="search" placeholder="Zoek..."
+                               aria-label="Zoek">
+                        <button id="navbar-search-button" class="btn btn-primary" type="submit">Zoeken</button>
+                    </form>
+                </div>
 
-            <!-- Right: Navigation links -->
-            <ul class="navbar-nav flex-row me-2">
-                <li class="nav-item px-2"><a class="nav-link" href="index.php">Home</a></li>
-                <li class="nav-item px-2"><a class="nav-link" href="upsert.php">Toevoeg</a></li>
-            </ul>
-
-            <!-- Account button -->
-            <div class="account-container ms-2">
-                <button id="account-button" class="btn btn-outline-light rounded-circle" type="button"
-                        data-bs-toggle="modal" data-bs-target="#loginModal">
-                    <i class="bi bi-person"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Offcanvas menu (mobile only) -->
-        <div class="offcanvas offcanvas-start bg-dark text-white d-lg-none" tabindex="-1" id="navbarOffcanvas"
-             aria-labelledby="navbarOffcanvasLabel">
-            <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="navbarOffcanvasLabel">WEJV Menu</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
-                        aria-label="Close"></button>
-            </div>
-            <div class="offcanvas-body">
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="upsert.php">Toevoeg</a></li>
+                <!-- Right: Navigation links -->
+                <ul class="navbar-nav flex-row me-2">
+                    <li class="nav-item px-2"><a class="nav-link" href="../pages/home.php">Home</a></li>
+                    <li class="nav-item px-2"><a class="nav-link" href="../pages/upsert.php">Toevoeg</a></li>
                 </ul>
+
+            </div>
+            <div class="right d-flex align-items-center">
+                <!-- Account button -->
+                <div class="account-container ms-2">
+                    <button id="account-button" class="btn btn-outline-light rounded-circle w-auto h-100" type="button"
+                            style="aspect-ratio: 1/1;"
+                            data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="bi bi-person"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </nav>
+
+<!-- Offcanvas for mobile navigation -->
+<div class="offcanvas offcanvas-start" data-bs-backdrop="true" data-bs-scroll="false" tabindex="-1" id="navbarOffcanvas"
+     aria-labelledby="navbarOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="navbarOffcanvasLabel">WEJV</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <!-- Navigation links -->
+        <ul class="navbar-nav list-unstyled">
+            <li class="nav-item"><a class="nav-link" href="../pages/home.php">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="../pages/upsert.php">Toevoeg</a></li>
+        </ul>
+    </div>
+</div>
 
 <!-- Add search functionality that works across all pages -->
 <script>
@@ -87,14 +95,14 @@
 
                 // If we're not on the discover page, redirect to it with the search query
                 const currentPage = window.location.pathname;
-                if (!currentPage.includes('index.php')) {
+                if (!currentPage.includes('home.php')) {
                     // Store the search query in localStorage so discover.js can use it
                     localStorage.setItem('navbarSearchQuery', searchQuery);
 
                     // Redirect to the discover page
-                    window.location.href = 'index.php';
+                    window.location.href = 'home.php';
                 } else {
-                    // If we're already on index.php, the event handler in discover.js will handle it
+                    // If we're already on home.php, the event handler in discover.js will handle it
                     // But we need to make sure the mobile search box is updated too
                     const mobileSearchBox = document.getElementById('search-box');
                     if (mobileSearchBox) {
@@ -109,11 +117,11 @@
         if (mobileSearchButton) {
             mobileSearchButton.addEventListener('click', function (e) {
                 const currentPage = window.location.pathname;
-                if (!currentPage.includes('index.php')) {
+                if (!currentPage.includes('home.php')) {
                     e.preventDefault();
-                    window.location.href = 'index.php';
+                    window.location.href = 'home.php';
                 }
-                // If we're on index.php, let the default handler in discover.js handle it
+                // If we're on home.php, let the default handler in discover.js handle it
             });
         }
     });

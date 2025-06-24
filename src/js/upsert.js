@@ -13,7 +13,7 @@ const recipeId = urlParams.get('id');
 async function loadRecipe() {
     if (!recipeId) return;
     try {
-        const res = await fetch(`../controllers/endpoint.php?action=getRecipe&id=${recipeId}`);
+        const res = await fetch(`../controllers/menu.php?action=getRecipe&id=${recipeId}`);
         const result = await res.json();
         if (result.success && result.data) {
             const r = result.data;
@@ -22,6 +22,69 @@ async function loadRecipe() {
             document.getElementById('person_num').value = r.personNum || '';
             document.getElementById('description').value = r.description || '';
             document.getElementById('preparation').value = r.preparation || '';
+
+            // Load ingredients
+            const ingredientsContainer = document.getElementById('ingredients-container');
+            if (ingredientsContainer && r.ingredients) {
+                // Clear default ingredient row
+                ingredientsContainer.innerHTML = '';
+
+                try {
+                    // Parse ingredients - could be JSON or semicolon-separated string
+                    let ingredientsList = [];
+                    try {
+                        ingredientsList = JSON.parse(r.ingredients);
+                    } catch (e) {
+                        // If not valid JSON, try splitting by semicolon
+                        ingredientsList = r.ingredients.split(';').map(item => item.trim()).filter(Boolean);
+                    }
+
+                    // Add each ingredient as a row
+                    ingredientsList.forEach(ingredient => {
+                        const row = document.createElement('div');
+                        row.className = 'ingredient-row mb-2 d-flex gap-2';
+
+                        // Parse ingredient string (e.g. "200 g flour" or "2 eggs")
+                        const parts = ingredient.trim().split(' ');
+                        const amount = parseFloat(parts[0]) || '';
+                        let unit = '';
+                        let name = '';
+
+                        if (parts.length >= 3) {
+                            // Has amount, unit, and name
+                            unit = parts[1];
+                            name = parts.slice(2).join(' ');
+                        } else if (parts.length === 2) {
+                            // Has amount and name (no unit)
+                            name = parts[1];
+                        } else {
+                            // Just name
+                            name = ingredient;
+                        }
+
+                        row.innerHTML = `
+                            <input type="number" class="form-control bg-dark text-white border-secondary" placeholder="Aantal" step="0.1" min="0" value="${amount}">
+                            <input type="text" class="form-control bg-dark text-white border-secondary" placeholder="Eenheid (g, ml, stuks)" value="${unit}">
+                            <input type="text" class="form-control bg-dark text-white border-secondary" placeholder="Ingrediënt" value="${name}">
+                            <button type="button" class="btn btn-outline-danger remove-ingredient">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        `;
+
+                        ingredientsContainer.appendChild(row);
+                    });
+
+                    // If no ingredients were added, add a default empty row
+                    if (ingredientsContainer.children.length === 0) {
+                        ingredientsContainer.insertAdjacentHTML('beforeend', ingredientRowTemplate());
+                    }
+                } catch (e) {
+                    console.error('Error parsing ingredients:', e);
+                    // Add default row if there's an error
+                    ingredientsContainer.insertAdjacentHTML('beforeend', ingredientRowTemplate());
+                }
+            }
+
             // Populate existing selected genres
             const genresArr = Array.isArray(r.genre) ? r.genre : [];
             genresArr.forEach(name => {
@@ -337,7 +400,16 @@ function initSubmitBtn() {
     if (!form) return;
     const successAlert = document.getElementById('success-alert');
     const errorAlert = document.getElementById('error-alert');
-    const ingredientsJson = document.getElementById('ingredients-json');
+
+    // Create a hidden field for ingredients if it doesn't exist
+    let ingredientsJson = document.getElementById('ingredients-json');
+    if (!ingredientsJson) {
+        ingredientsJson = document.createElement('input');
+        ingredientsJson.type = 'hidden';
+        ingredientsJson.id = 'ingredients-json';
+        ingredientsJson.name = 'ingredients-json';
+        form.appendChild(ingredientsJson);
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -360,7 +432,8 @@ function initSubmitBtn() {
                 ingredients.push(name);
             }
         });
-        ingredientsJson.value = ingredients.join('; ');
+        const ingredientsString = ingredients.join('; ');
+        ingredientsJson.value = ingredientsString;
 
         // Collect tags/genres
         const tags = [];
@@ -372,17 +445,30 @@ function initSubmitBtn() {
             genres.push(badge.textContent.trim());
         });
 
+        // Get author_id
+
+        /** @type {number} */
+        const author_id = (() => {
+            let fallback_id = -1;
+            try {
+                const userInfo = JSON.parse(sessionStorage.getItem('userInfo'));
+                return userInfo?.author_id ?? fallback_id;
+            } catch (err) {
+                return fallback_id;
+            }
+        })();
+
         // Prepare form data
         const formData = new FormData(form);
         formData.set('ingredients', ingredientsJson.value);
         formData.set('tags', JSON.stringify(tags));
         formData.set('genres', JSON.stringify(genres));
+        formData.set('author_id', author_id)
 
-        // AJAX submit
         const action = recipeId ? 'updateRecipe' : 'addRecipe';
         if (recipeId) formData.append('id', recipeId);
         try {
-            const response = await fetch(`../controllers/endpoint.php?action=${action}`, {
+            const response = await fetch(`../controllers/menu.php?action=${action}`, {
                 method: 'POST',
                 body: formData
             });
@@ -406,7 +492,7 @@ function initSubmitBtn() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    loadRecipe();
+    loadRecipe().then(r => {});
     initIngredientBtn();
     initTagInputs();
     initSubmitBtn();

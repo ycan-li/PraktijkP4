@@ -10,7 +10,7 @@ $action = isset($request['action']) ? $request['action'] : '';
 
 // Initialize Wejv class with database credentials
 try {
-    $wejv = new Wejv('../db_creds.json');
+    $wejv = new Wejv('../../db_creds.json');
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,

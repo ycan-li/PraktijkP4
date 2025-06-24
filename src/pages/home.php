@@ -22,24 +22,27 @@
         </form>
     </div>
 
-    <div class="filter-toolbar d-flex flex-wrap justify-content-between align-items-center">
-        <div class="d-flex flex-wrap align-items-center gap-2 px-4" id="filter-container">
-            <!-- Filter buttons will be added dynamically -->
-        </div>
+    <div class="filter-toolbar d-flex flex-column flex-lg-row flex-wrap justify-content-between align-items-center gap-3">
+        <div class="left d-flex flex-grow-1 w-100 justify-content-start align-items-center gap-3 px-4"></div>
+        <div class="right d-flex w-100 flex-column flex-lg-row justify-content-start align-items-center gap-3 px-4">
+            <div class="d-flex flex-wrap flex-lg-grow-1 align-items-center align-self-start gap-2" id="filter-container">
+                <!-- Filter buttons will be added dynamically -->
+            </div>
 
-        <!-- Filter Action Buttons -->
-        <div class="d-flex justify-content-end gap-2 px-4">
-            <button id="apply-filter-button" class="btn btn-primary">Apply Filter</button>
-            <button id="clear-filter-button" class="btn btn-outline-secondary">Clear Filter</button>
+            <!-- Filter Action Buttons -->
+            <div class="d-flex justify-content-end align-self-end gap-2">
+                <button id="apply-filter-button" class="btn btn-primary">Apply Filter</button>
+                <button id="clear-filter-button" class="btn btn-outline-secondary">Clear Filter</button>
+            </div>
         </div>
     </div>
     <!-- Filters -->
 
-    <div class="d-flex flex-column px-4 py-4" id="content-container">
+    <div class="d-flex flex-column align-items-center px-4 py-4" id="content-container">
         <nav id="pagination-container-top" class="pagination-container d-flex justify-content-center align-self-center w-100" aria-label="Page pagination" style="max-width:100%;">
             <ul class="pagination flex-wrap mb-0 w-100" style="max-width:100%;"></ul>
         </nav>
-        <div id="card-container">
+        <div id="card-container" class="w-100">
         </div>
         <nav id="pagination-container-bottom" class="pagination-container d-flex justify-content-center align-self-center w-100" aria-label="Page pagination" style="max-width:100%;">
             <ul class="pagination flex-wrap mb-0 w-100" style="max-width:100%;"></ul>
@@ -47,6 +50,6 @@
     </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
-<script src="../js/discover.js"></script>
+<script src="../js/home.js"></script>
 </body>
 </html>

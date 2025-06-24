@@ -1,10 +1,17 @@
 <?php
+// Require login
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
 require_once "../lib/wejv.php";
 require_once "../lib/utils.php";
 
 // Initialize Wejv class to fetch filter data
 try {
-    $wejv = new Wejv('../db_creds.json');
+    $wejv = new Wejv('../../db_creds.json');
     $filters = $wejv->fetchFilters();
 } catch (Exception $e) {
     $filters = [];
@@ -28,7 +35,7 @@ $categories = [
     <link href="../css/style.css" rel="stylesheet">
 </head>
 <body>
-<?php //include "../components/navbar.php"; ?>
+<?php include "../components/navbar.php"; ?>
 
 <main class="container py-4">
     <div class="row justify-content-center">
@@ -190,6 +197,7 @@ $categories = [
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
 <script type="module" src="../js/upsert.js"></script>
+<script src="../js/auth.js"></script>
 </body>
 </html>
 

@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Flag to determine if filters have been applied
     let filtersApplied = false;
     let favFilterActive = false;
+    let fromMeFilterActive = false; // track 'from me' filter
 
     // Check if there's a search query passed from another page
     const navbarSearchQuery = localStorage.getItem('navbarSearchQuery');
@@ -30,12 +31,48 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.removeItem('navbarSearchQuery');
     }
 
-    fetch('../controllers/endpoint.php?action=getFilter')
-        .then(res => res.json())
-        .then(data => {
-            renderFilters(data);
-            addFavoritesFilter(); // Add this line
-        });
+    // Function to fetch filters with retry logic
+    function fetchFiltersWithRetry(retryCount = 0, maxRetries = 2) {
+        fetch('../controllers/menu.php?action=getFilter')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`Server error ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    console.error('Error fetching filters:', data.error);
+                    return; // Skip rendering if there's an error
+                }
+                renderFilters(data);
+                addFavoritesFilter();
+                addFromMeFilter();
+
+                // If this was a successful retry, trigger content rendering again
+                if (retryCount > 0) {
+                    console.log(`Filter fetch succeeded after ${retryCount} retries. Re-rendering content...`);
+                    renderContent(currentPageGlobal);
+                }
+            })
+            .catch(err => {
+                console.error(`Failed to load filters (attempt ${retryCount + 1}/${maxRetries + 1}):`, err);
+
+                // Retry logic
+                if (retryCount < maxRetries) {
+                    console.log(`Retrying filter fetch in 500ms... (${retryCount + 1}/${maxRetries})`);
+                    setTimeout(() => {
+                        fetchFiltersWithRetry(retryCount + 1, maxRetries);
+                    }, 500); // Wait 500ms before retrying
+                } else {
+                    console.error('Maximum retry attempts reached. Continuing without filters.');
+                    // Continue with the app even if filters fail to load after all retries
+                }
+            });
+    }
+
+    // Start the fetch process with retry capability
+    fetchFiltersWithRetry();
 
     renderContent(currentPageGlobal);
 
@@ -102,8 +139,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const isLoggedIn = !!sessionStorage.getItem('userInfo');
         if (!isLoggedIn) return; // Only show to logged in users
 
-        const filterContainer = document.getElementById('filter-container');
-        if (!filterContainer) return;
+        // const filterContainer = document.getElementById('filter-container');
+        const filterToolbarLeft = document.querySelector('.filter-toolbar > .left');
+        if (!filterToolbarLeft) return;
 
         const favFilterTemplate = `
             <div id="filter-favorites" class="favorite-filter">
@@ -114,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
 
         // Add to beginning of filters
-        filterContainer.insertAdjacentHTML('afterbegin', favFilterTemplate);
+        filterToolbarLeft.insertAdjacentHTML('afterbegin', favFilterTemplate);
 
         // Add toggle behavior
         const favToggle = document.getElementById('favorites-toggle');
@@ -126,12 +164,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.classList.add('btn-danger');
                 this.querySelector('i').classList.remove('bi-heart');
                 this.querySelector('i').classList.add('bi-heart-fill');
+                // deactivate 'from me' when favorites activated
+                fromMeFilterActive = false;
+                const fromBtn = document.getElementById('from-me-toggle');
+                if (fromBtn) {
+                    fromBtn.classList.remove('btn-primary');
+                    fromBtn.classList.add('btn-outline-primary');
+                    const icon = fromBtn.querySelector('i');
+                    icon.classList.replace('bi-person-fill', 'bi-person');
+                }
             } else {
                 this.classList.add('btn-outline-danger');
                 this.classList.remove('btn-danger');
                 this.querySelector('i').classList.add('bi-heart');
                 this.querySelector('i').classList.remove('bi-heart-fill');
             }
+            renderContent();
         });
     }
 
@@ -162,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const emptyHeart = this.querySelector('.bi-heart');
 
                 // Send request to toggle favorite
-                fetch('../controllers/endpoint.php', {
+                fetch('../controllers/menu.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -225,8 +273,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     <button class="btn btn-secondary dropdown-toggle fw-bold" data-bs-toggle="dropdown"
                             id="title-${filterName}" aria-expanded="false">${filterDisplayName}
                     </button>
-                    <div class="dropdown-menu position-absolute border-0 pt-0 mx-0 rounded-3 shadow overflow-x-hidden overflow-y-auto w-100"
-                         style="min-width: 200px; max-height: 400px"
+                    <div class="dropdown-menu position-absolute border-0 pt-0 mx-0 rounded-3 shadow overflow-x-auto overflow-y-auto w-100"
+                         style="min-width: 250px; max-height: 400px"
                          id="dropdown-menu-${filterName}" aria-labelledby="title-${filterName}">
                         <div class="selected d-flex flex-wrap pt-3"></div>
                         <form class="p-2 bg-dark border-bottom border-dark">
@@ -365,16 +413,22 @@ document.addEventListener('DOMContentLoaded', function () {
      * @param {number} [currentPage=1] - The page number to render.
      * @returns {void}
      */
-    function renderContent(currentPage = 1) {
-        // Get all selected filter items
+    function renderContent(currentPage = 1, retryCount = 0, maxRetries = 2) {
         let selectedFilters = {};
 
-        // Add favorites filter if active
         if (favFilterActive) {
             let userInfo = sessionStorage.getItem('userInfo');
             if (userInfo) {
                 userInfo = JSON.parse(userInfo);
                 selectedFilters['fav'] = userInfo.id;
+            }
+        }
+        if (fromMeFilterActive) {
+            let userInfo = sessionStorage.getItem('userInfo');
+            if (userInfo) {
+                userInfo = JSON.parse(userInfo);
+                // filter by author (menus created by current user)
+                selectedFilters['author'] = [userInfo.author_id];
             }
         }
 
@@ -408,14 +462,19 @@ document.addEventListener('DOMContentLoaded', function () {
             filters: selectedFilters,
             search: searchText
         };
-        fetch(`../controllers/endpoint.php`, {
+        fetch(`../controllers/menu.php`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(params)
         })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`Server error ${res.status}`);
+                }
+                return res.json();
+            })
             .then(data => {
-                console.log(data);
+                // console.log(data);
                 const total = data['total'] || 0;
                 const menuData = data['data'] || [];
 
@@ -430,9 +489,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 function renderPaginations() {
                     paginationContainers.forEach(pagi => {
-                        pagi.innerHTML = '';
                         const totalPages = Math.ceil(state.total / NUM_PER_PAGE);
+                        if (totalPages <= 1) {
+                            pagi.classList.remove('d-flex');
+                            pagi.classList.add('d-none');
+                        } else {
+                            pagi.classList.remove('d-none');
+                            pagi.classList.add('d-flex');
+                        }
+
                         // Create a temporary page-item to measure width
+                        pagi.innerHTML = '';
                         const tempLi = document.createElement('li');
                         tempLi.className = 'page-item';
                         const tempA = document.createElement('a');
@@ -602,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     `
                     cardContainer.insertAdjacentHTML('beforeend', rowTemplate);
-                    const row = cardContainer.firstElementChild;
+                    const row = cardContainer.lastElementChild;
                     for (let itemIndex = 0; itemIndex < NUM_PER_ROW; itemIndex++) {
                         if (count >= total || count >= menuData.length) break;
                         const menuItem = menuData[count] || {};
@@ -620,32 +687,34 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <div data-id="${menuItem['id'] || ''}" class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg position-relative">
                                     <img src="${imgSrc}" class="card-img-top" alt="menu-id-${menuItem['id'] || 'unknown'}" style="object-fit:cover;max-height:180px;">
                                     <div class="d-flex flex-column justify-content-between h-100 p-4 p-lg-5 pb-3 text-white text-shadow-1">
-                                        <ul class="d-flex justify-content-between align-items-center list-unstyled mb-0">
-                                            <li class="d-flex align-items-center gap-1">
-                                                <i class="bi bi-person-circle fs-6"></i>
-                                                <small class="fs-6">${menuItem['author'] ? menuItem['author'] : 'n.v.t'}</small>
-                                            </li>
-                                            <li>
-                                                <a href="detail.php?id=${menuItem['id'] || ''}" class="text-decoration-none">
-                                                    <i class="bi bi-arrow-right-circle display-5 text-secondary-emphasis"></i>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                        <div class="name-container py-3">
-                                            <h3 class="fs-1 text-truncate-2 fw-bold">${menuItem['name'] || 'Geen naam'}</h3>
-                                        </div>
-                                        <div class="card-bottom d-flex flex-column gap-2 mb-3 mb-lg-4">
-                                            <ul class="d-flex list-unstyled mb-1">
-                                                <li class="d-flex align-items-center me-3 gap-1">
-                                                    <i class="bi bi-egg-fried"></i>
-                                                    <div class="genre-container d-flex flex-wrap gap-1"></div>
-                                                </li>
+                                        <div class="flex-grow-1">
+                                            <ul class="d-flex justify-content-between align-items-center list-unstyled mb-0">
                                                 <li class="d-flex align-items-center gap-1">
-                                                    <i class="bi bi-clock-history"></i>
-                                                    <small>${menuItem['prepareTime'] ? menuItem['prepareTime'] + ' min' : 'n.t.v'}</small></li>
+                                                    <i class="bi bi-person-circle fs-6"></i>
+                                                    <small class="fs-6">${menuItem['author'] ? menuItem['author'] : 'n.v.t'}</small>
+                                                </li>
+                                                <li>
+                                                    <a href="detail.php?id=${menuItem['id'] || ''}" class="text-decoration-none">
+                                                        <i class="bi bi-arrow-right-circle display-5 text-secondary-emphasis"></i>
+                                                    </a>
+                                                </li>
                                             </ul>
+                                            <div class="name-container py-3">
+                                                <h3 class="fs-1 text-truncate-2 fw-bold">${menuItem['name'] || 'Geen naam'}</h3>
+                                            </div>
+                                            <div class="card-bottom d-flex flex-column gap-2 mb-3 mb-lg-4">
+                                                <ul class="d-flex list-unstyled mb-1">
+                                                    <li class="d-flex align-items-center me-3 gap-1">
+                                                        <i class="bi bi-egg-fried"></i>
+                                                        <div class="genre-container d-flex flex-wrap gap-1"></div>
+                                                    </li>
+                                                    <li class="d-flex align-items-center gap-1">
+                                                        <i class="bi bi-clock-history"></i>
+                                                        <small>${menuItem['prepareTime'] ? menuItem['prepareTime'] + ' min' : 'n.t.v'}</small></li>
+                                                </ul>
+                                            </div>
                                         </div>
-                                        <ul class="toolbar d-flex flex-row justify-content-end align-items-center list-unstyled mb-0">
+                                        <ul class="toolbar d-flex flex-row gap-3 justify-content-end align-items-center list-unstyled mb-0">
                                             <li style="cursor:pointer;" class="fav-btn position-relative z-2">
                                                 ${heartIcon}
                                             </li>
@@ -691,23 +760,21 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (currentUser.role === 'admin' || currentUser.author_id === menuItem['author_id']) {
                                 const deleteLi = document.createElement('li');
                                 deleteLi.style.cursor = 'pointer';
-                                deleteLi.classList.add('delete-btn');
-                                deleteLi.classList.add('position-relative');
-                                deleteLi.classList.add('z-2');
-                                deleteLi.innerHTML = '<i class="bi bi-trash"></i>';
+                                deleteLi.classList.add('delete-btn', 'position-relative', 'z-2');
+                                deleteLi.innerHTML = '<i class="bi bi-trash display-7"></i>';
                                 const toolbar = card.querySelector('.toolbar');
-                                toolbar.appendChild(deleteLi);
+                                toolbar.prepend(deleteLi);
                                 // Add edit button for author only
                                 if (currentUser.author_id === menuItem['author_id']) {
                                     const editLi = document.createElement('li');
                                     editLi.style.cursor = 'pointer';
-                                    editLi.classList.add('edit-btn', 'position-relative', 'z-2', 'ms-2');
-                                    editLi.innerHTML = '<i class="bi bi-pencil"></i>';
+                                    editLi.classList.add('edit-btn', 'position-relative', 'z-2');
+                                    editLi.innerHTML = '<i class="bi bi-pencil display-7"></i>';
                                     editLi.addEventListener('click', (e) => {
                                         e.preventDefault(); e.stopPropagation();
                                         window.location.href = `upsert.php?id=${menuItem['id']}`;
                                     });
-                                    toolbar.appendChild(editLi);
+                                    toolbar.prepend(editLi);
                                 }
                             }
                         }
@@ -722,9 +789,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }); // end data.then
         }
 
-/**
- * Attaches click event listeners to delete buttons in cards to remove recipes via API.
- */
+    /**
+     * Attaches click event listeners to delete buttons in cards to remove recipes via API.
+     */
     function attachDeleteListeners() {
         const userInfo = sessionStorage.getItem('userInfo');
         if (!userInfo) return;
@@ -742,7 +809,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 fd.append('id', menuId);
                 fd.append('user_id', user.id);
                 fd.append('role', user.role || '');
-                fetch('../controllers/endpoint.php?action=deleteRecipe', { method: 'POST', body: fd })
+                fetch('../controllers/menu.php?action=deleteRecipe', { method: 'POST', body: fd })
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
@@ -757,6 +824,47 @@ document.addEventListener('DOMContentLoaded', function () {
                     })
                     .catch(() => alert('Verwijderen mislukt door een netwerkfout.'));
             });
+        });
+    }
+
+    /**
+     * Adds a 'From Me' filter to show only current user's recipes.
+     */
+    function addFromMeFilter() {
+        const userInfo = sessionStorage.getItem('userInfo');
+        if (!userInfo) return;
+        const container = document.querySelector('.filter-toolbar .left');
+        if (!container) return;
+        const html = `
+            <div id="filter-from-me" class="from-me-filter">
+                <button id="from-me-toggle" class="btn btn-outline-primary d-flex gap-1 fw-bold">
+                    <i class="bi bi-person me-1"></i> Van mij
+                </button>
+            </div>
+        `;
+        container.insertAdjacentHTML('afterbegin', html);
+        const btn = document.getElementById('from-me-toggle');
+        btn.addEventListener('click', function() {
+            fromMeFilterActive = !fromMeFilterActive;
+            if (fromMeFilterActive) {
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+                this.querySelector('i').classList.replace('bi-person', 'bi-person-fill');
+                // deactivate favorites when 'from me' activated
+                favFilterActive = false;
+                const favBtn = document.getElementById('favorites-toggle');
+                if (favBtn) {
+                    favBtn.classList.remove('btn-danger');
+                    favBtn.classList.add('btn-outline-danger');
+                    const icon = favBtn.querySelector('i');
+                    icon.classList.replace('bi-heart-fill', 'bi-heart');
+                }
+            } else {
+                this.classList.add('btn-outline-primary');
+                this.classList.remove('btn-primary');
+                this.querySelector('i').classList.replace('bi-person-fill', 'bi-person');
+            }
+            renderContent();
         });
     }
 });

@@ -446,4 +446,218 @@ class Wejv
         $authorId = $stmt->fetchColumn();
         return $authorId !== false ? (int)$authorId : false;
     }
+
+    public function getAuthorName(int $authorId): ?string
+    {
+        $stmt = $this->conn->prepare("SELECT name FROM author WHERE id = ?");
+        $stmt->execute([$authorId]);
+        $name = $stmt->fetchColumn();
+        return $name !== false ? $name : null;
+    }
+
+    /**
+     * Convert an image to WebP format
+     *
+     * @param string $img_path Path to the image file
+     * @param string $img_type MIME type of the image
+     * @return string|null WebP image data as string or null if conversion failed
+     */
+    public function convertToWebP(string $img_path, string $img_type): ?string
+    {
+        switch ($img_type) {
+            case 'image/jpeg': case 'image/jpg':
+                $image = imagecreatefromjpeg($img_path);
+                break;
+            case 'image/png':
+                $image = imagecreatefrompng($img_path);
+                break;
+            case 'image/webp':
+                return file_get_contents($img_path);
+            default:
+                return null;
+        }
+        if (!$image) return null;
+        ob_start();
+        imagewebp($image, null, 80);
+        $webp = ob_get_clean();
+        imagedestroy($image);
+        return $webp;
+    }
+
+    /**
+     * Get an existing ID for a name in a table, or create a new record if it doesn't exist
+     *
+     * @param string $table Table name
+     * @param string $name Name to look up
+     * @return int The ID of the existing or newly created record
+     */
+    public function getOrCreateId(string $table, string $name): int
+    {
+        $stmt = $this->conn->prepare("SELECT id FROM `$table` WHERE name = ?");
+        $stmt->execute([$name]);
+        $id = $stmt->fetchColumn();
+        if ($id) return (int)$id;
+        $stmt = $this->conn->prepare("INSERT INTO `$table` (name) VALUES (?)");
+        $stmt->execute([$name]);
+        return (int)$this->conn->lastInsertId();
+    }
+
+    /**
+     * Delete a recipe and all its related data
+     *
+     * @param int $menuId The recipe ID
+     * @param int $userId The user ID attempting the deletion
+     * @param string $role User role ('admin' for admin users)
+     * @return array Success status and message
+     */
+    public function deleteRecipe(int $menuId, int $userId, string $role = ''): array
+    {
+        if ($menuId <= 0) {
+            return ['success' => false, 'message' => 'Invalid recipe ID'];
+        }
+
+        $info = $this->fetchInfo($menuId);
+        if (!$info) {
+            return ['success' => false, 'message' => 'Recipe not found'];
+        }
+
+        $isAdmin = ($role === 'admin');
+        $isAuthor = false;
+
+        if ($userId && !$isAdmin) {
+            $userAuthorId = $this->getAuthorId($userId);
+            if ($userAuthorId !== false && isset($info['author_id'])) {
+                $isAuthor = ((int)$info['author_id'] === $userAuthorId);
+            }
+        }
+
+        if (!$isAdmin && !$isAuthor) {
+            return ['success' => false, 'message' => 'Not authorized'];
+        }
+
+        try {
+            $this->conn->beginTransaction();
+            $this->conn->prepare('DELETE FROM menu_genre WHERE menu_id = ?')->execute([$menuId]);
+            $this->conn->prepare('DELETE FROM menu_tag WHERE menu_id = ?')->execute([$menuId]);
+            $this->conn->prepare('DELETE FROM fav WHERE menu_id = ?')->execute([$menuId]);
+            $this->conn->prepare('DELETE FROM menu WHERE id = ?')->execute([$menuId]);
+            $this->conn->commit();
+            return ['success' => true];
+        } catch (Exception $e) {
+            if ($this->conn->inTransaction()) $this->conn->rollBack();
+            return ['success' => false, 'message' => 'Delete failed: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Update an existing recipe with new data
+     *
+     * @param array $recipeData Recipe data including id, name, prepareTime, personNum, description, preparation, ingredients, genres, tags, and optional img
+     * @return array Success status, message, and recipe ID
+     */
+    public function updateRecipe(array $recipeData): array
+    {
+        $menuId = $recipeData['id'] ?? 0;
+        if ($menuId <= 0) {
+            return ['success' => false, 'message' => 'Invalid recipe ID'];
+        }
+
+        try {
+            // First, get existing recipe data
+            $existingRecipe = $this->fetchInfo($menuId);
+            if (!$existingRecipe) {
+                return ['success' => false, 'message' => 'Recipe not found'];
+            }
+
+            // Get existing genres and tags from the recipe
+            $existingGenres = $existingRecipe['genre'] ?? [];
+            $existingTags = $existingRecipe['tag'] ?? [];
+
+            $this->conn->beginTransaction();
+
+            // Update basic menu information
+            $sql = "UPDATE menu SET name = ?, prepareTime = ?, personNum = ?, description = ?, preparation = ?, ingredients = ?";
+            $params = [
+                $recipeData['name'],
+                $recipeData['prepareTime'],
+                $recipeData['personNum'],
+                $recipeData['description'],
+                $recipeData['preparation'],
+                $recipeData['ingredients']
+            ];
+
+            if (isset($recipeData['img']) && $recipeData['img'] !== null) {
+                $sql .= ", img = ?";
+                $params[] = $recipeData['img'];
+            }
+
+            $sql .= " WHERE id = ?";
+            $params[] = $menuId;
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+
+            // Process genres
+            $genreNames = $recipeData['genres'];
+
+            // Add any new genres that don't exist yet and establish relationship
+            foreach ($genreNames as $genreName)                {
+                $genreId = $this->getOrCreateId('genre', $genreName);
+
+                // Check if this relationship already exists
+                $stmt = $this->conn->prepare('SELECT 1 FROM menu_genre WHERE menu_id = ? AND genre_id = ?');
+                $stmt->execute([$menuId, $genreId]);
+                if (!$stmt->fetchColumn()) {
+                    $this->conn->prepare('INSERT INTO menu_genre (menu_id, genre_id) VALUES (?, ?)')->execute([$menuId, $genreId]);
+                }
+            }
+
+            // Remove genres that are no longer associated (directly using names)
+            $genresToRemove = array_diff($existingGenres, $genreNames);
+            if (!empty($genresToRemove)) {
+                $placeholders = implode(',', array_fill(0, count($genresToRemove), '?'));
+                $stmt = $this->conn->prepare("
+                    DELETE mg FROM menu_genre mg 
+                    JOIN genre g ON mg.genre_id = g.id 
+                    WHERE mg.menu_id = ? AND g.name IN ($placeholders)
+                ");
+                $params = array_merge([$menuId], $genresToRemove);
+                $stmt->execute($params);
+            }
+
+            // Process tags
+            $tagNames = $recipeData['tags'];
+
+            // Add any new tags that don't exist yet and establish relationship
+            foreach ($tagNames as $tagName) {
+                $tagId = $this->getOrCreateId('tag', $tagName);
+
+                // Check if this relationship already exists
+                $stmt = $this->conn->prepare('SELECT 1 FROM menu_tag WHERE menu_id = ? AND tag_id = ?');
+                $stmt->execute([$menuId, $tagId]);
+                if (!$stmt->fetchColumn()) {
+                    $this->conn->prepare('INSERT INTO menu_tag (menu_id, tag_id) VALUES (?, ?)')->execute([$menuId, $tagId]);
+                }
+            }
+
+            // Remove tags that are no longer associated (directly using names)
+            $tagsToRemove = array_diff($existingTags, $tagNames);
+            if (!empty($tagsToRemove)) {
+                $placeholders = implode(',', array_fill(0, count($tagsToRemove), '?'));
+                $stmt = $this->conn->prepare("
+                    DELETE mt FROM menu_tag mt 
+                    JOIN tag t ON mt.tag_id = t.id 
+                    WHERE mt.menu_id = ? AND t.name IN ($placeholders)
+                ");
+                $params = array_merge([$menuId], $tagsToRemove);
+                $stmt->execute($params);
+            }
+
+            $this->conn->commit();
+            return ['success' => true, 'id' => $menuId];
+        } catch (Exception $e) {
+            if ($this->conn->inTransaction()) $this->conn->rollBack();
+            return ['success' => false, 'message' => 'Update failed: ' . $e->getMessage()];
+        }
+    }
 }

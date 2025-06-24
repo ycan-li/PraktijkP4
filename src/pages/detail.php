@@ -6,13 +6,13 @@ require_once "../lib/utils.php";
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($id <= 0) {
-    header('Location: index.php');
+    header('Location: home.php');
     exit;
 }
 
 // Initialize Wejv class and fetch menu info
 try {
-    $wejv = new Wejv('../db_creds.json');
+    $wejv = new Wejv('../../db_creds.json');
     $menuInfo = $wejv->fetchInfo($id);
 } catch (Exception $e) {
     // Handle error

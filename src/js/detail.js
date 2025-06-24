@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Send request to toggle favorite
-        fetch('../controllers/endpoint.php', {
+        fetch('../controllers/menu.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * @returns {void}
      */
     function checkFavoriteStatus() {
-        fetch('../controllers/endpoint.php', {
+        fetch('../controllers/menu.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (!confirm('Weet je zeker dat je dit recept wilt verwijderen?')) return;
-            fetch('../controllers/endpoint.php?action=deleteRecipe', {
+            fetch('../controllers/menu.php?action=deleteRecipe', {
                 method: 'POST',
                 headers: { },
                 body: (() => {
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     alert('Recept succesvol verwijderd!');
-                    window.location.href = 'index.php';
+                    window.location.href = 'home.php';
                 } else {
                     alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
                 }
