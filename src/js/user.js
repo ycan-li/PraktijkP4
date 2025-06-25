@@ -8,6 +8,36 @@ document.addEventListener('DOMContentLoaded', function () {
     const loginSubmitButton = document.getElementById('login-submit');
     const registerSubmitButton = document.getElementById('register-submit');
 
+    // Fix modal accessibility issues by setting up event handlers
+    const setupModalAccessibility = function() {
+        // Get all modals
+        const modals = document.querySelectorAll('.modal');
+
+        modals.forEach(modal => {
+            // When modal is about to be hidden, ensure no element inside has focus
+            modal.addEventListener('hide.bs.modal', function() {
+                // Find any element that might have focus within the modal
+                const focusedElement = modal.querySelector(':focus');
+                if (focusedElement) {
+                    focusedElement.blur();
+                }
+
+                // Set focus to the body element to ensure it's outside the modal
+                document.body.focus();
+            });
+
+            // Remove aria-hidden when there's focus inside the modal
+            modal.addEventListener('shown.bs.modal', function() {
+                if (modal.getAttribute('aria-hidden') === 'true') {
+                    modal.setAttribute('aria-hidden', 'false');
+                }
+            });
+        });
+    };
+
+    // Call the function to set up modal accessibility
+    setupModalAccessibility();
+
     // Check if user is logged in
     const checkLoginStatus = function () {
         // Get user info from session storage
@@ -151,10 +181,24 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.body.dataset.loggedIn = 'true';
                         document.body.dataset.userId = data.user.id;
 
+                        // Properly handle focus before closing the modal
+                        const loginModal = document.getElementById('loginModal');
+                        const closeBtn = loginModal.querySelector('.btn-close');
+                        if (closeBtn) {
+                            // Remove focus from close button before hiding modal
+                            closeBtn.blur();
+                        }
+
                         // Close the modal
-                        const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-                        loginModal.hide();
-                        window.location.reload();
+                        const loginModalInstance = bootstrap.Modal.getInstance(loginModal);
+                        loginModalInstance.hide();
+
+                        // Reload page after modal is hidden
+                        loginModal.addEventListener('hidden.bs.modal', function onHidden() {
+                            window.location.reload();
+                            // Remove the event listener to prevent memory leaks
+                            loginModal.removeEventListener('hidden.bs.modal', onHidden);
+                        }, { once: true });
 
                         // Update UI
                         checkLoginStatus();
@@ -233,12 +277,28 @@ document.addEventListener('DOMContentLoaded', function () {
                         // Reset form
                         registerForm.reset();
 
-                        // Switch back to login modal after a delay
+                        // Properly handle modal transition with focus management
+                        const registerModal = document.getElementById('registerModal');
+                        const closeBtn = registerModal.querySelector('.btn-close');
+                        if (closeBtn) {
+                            closeBtn.blur();
+                        }
+
+                        // Switch back to login modal after a delay with proper focus management
                         setTimeout(() => {
-                            const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                            registerModal.hide();
-                            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                            loginModal.show();
+                            const registerModalInstance = bootstrap.Modal.getInstance(registerModal);
+
+                            // Set up event listener for when the modal is fully hidden
+                            registerModal.addEventListener('hidden.bs.modal', function onHidden() {
+                                // Open login modal after register modal is fully hidden
+                                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                                loginModal.show();
+                                // Remove the event listener to prevent memory leaks
+                                registerModal.removeEventListener('hidden.bs.modal', onHidden);
+                            }, { once: true });
+
+                            // Hide the register modal
+                            registerModalInstance.hide();
                         }, 2000);
                     } else {
                         // Show error message
