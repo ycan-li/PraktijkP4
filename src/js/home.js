@@ -795,36 +795,96 @@ document.addEventListener('DOMContentLoaded', function () {
     function attachDeleteListeners() {
         const userInfo = sessionStorage.getItem('userInfo');
         if (!userInfo) return;
+
+        // Initialize the delete confirmation modal
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        // Create a variable to store the current card being deleted
+        let currentCardToDelete = null;
+        let currentMenuName = '';
+
         document.querySelectorAll('.toolbar .delete-btn').forEach(btn => {
             if (btn.dataset.hasListener === 'true') return;
             btn.dataset.hasListener = 'true';
+
             btn.addEventListener('click', function(e) {
-                e.preventDefault(); e.stopPropagation();
-                if (!confirm('Weet je zeker dat je dit recept wilt verwijderen?')) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Store references to the card elements
                 const card = this.closest('.card');
-                const col = card.closest('.col');
+                currentCardToDelete = card.closest('.col');
+                const menuId = card.dataset.id;
+
+                // Get the recipe name and set it in the modal
+                currentMenuName = card.querySelector('.name-container h3').textContent;
+                document.getElementById('recipe-name-to-delete').textContent = currentMenuName;
+
+                // Show the confirmation modal
+                deleteModal.show();
+            });
+        });
+
+        // Handle the confirm delete button click
+        if (confirmDeleteBtn && !confirmDeleteBtn.dataset.hasListener) {
+            confirmDeleteBtn.dataset.hasListener = 'true';
+
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (!currentCardToDelete) {
+                    deleteModal.hide();
+                    return;
+                }
+
+                // Show loading state
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verwijderen...';
+                this.disabled = true;
+
+                const card = currentCardToDelete.querySelector('.card');
                 const menuId = card.dataset.id;
                 const user = JSON.parse(userInfo);
+
                 const fd = new FormData();
                 fd.append('id', menuId);
                 fd.append('user_id', user.id);
                 fd.append('role', user.role || '');
-                fetch('../controllers/menu.php?action=deleteRecipe', { method: 'POST', body: fd })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            if (col) {
-                                col.remove();
-                            } else {
-                                card.remove();
-                            }
-                        } else {
-                            alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
+
+                fetch('../controllers/menu.php?action=deleteRecipe', {
+                    method: 'POST',
+                    body: fd
+                })
+                .then(res => res.json())
+                .then(data => {
+                    // Reset button state
+                    this.innerHTML = 'Verwijderen';
+                    this.disabled = false;
+
+                    if (data.success) {
+                        // Remove the card from the UI
+                        if (currentCardToDelete) {
+                            currentCardToDelete.remove();
                         }
-                    })
-                    .catch(() => alert('Verwijderen mislukt door een netwerkfout.'));
+                        // Hide the modal
+                        deleteModal.hide();
+                    } else {
+                        // Hide the modal
+                        deleteModal.hide();
+                        // Show error alert
+                        alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error deleting recipe:', err);
+                    // Reset button state
+                    this.innerHTML = 'Verwijderen';
+                    this.disabled = false;
+                    // Hide the modal
+                    deleteModal.hide();
+                    // Show error alert
+                    alert('Verwijderen mislukt door een netwerkfout.');
+                });
             });
-        });
+        }
     }
 
     /**

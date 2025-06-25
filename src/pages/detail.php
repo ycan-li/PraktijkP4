@@ -155,7 +155,7 @@ $canEditDelete = $isAdmin || $isAuthor;
                                 <a href="upsert.php?id=<?= $id ?>" class="btn btn-warning ms-2" id="edit-recipe-btn">
                                     <i class="upsert bi bi-pencil-square"></i> Bewerken
                                 </a>
-                                <button class="btn btn-danger ms-2" id="delete-recipe-btn">
+                                <button class="btn btn-danger ms-2" id="delete-recipe-btn" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
                                     <i class="delete bi bi-trash"></i> Verwijderen
                                 </button>
                             <?php endif; ?>
@@ -211,6 +211,26 @@ $canEditDelete = $isAdmin || $isAuthor;
         </div>
     </div>
 </main>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">Recept verwijderen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Weet je zeker dat je het recept <strong><?= htmlspecialchars($menuInfo['name']) ?></strong> wilt verwijderen?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuleren</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Verwijderen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
 <script src="../js/detail.js"></script>
 </body>

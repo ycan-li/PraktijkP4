@@ -135,10 +135,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Edit/Delete Button Logic ---
     const editBtn = document.getElementById('edit-recipe-btn');
     const deleteBtn = document.getElementById('delete-recipe-btn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!confirm('Weet je zeker dat je dit recept wilt verwijderen?')) return;
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function() {
+            // Get menu ID from the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const menuId = urlParams.get('id');
+            if (!menuId) return;
+
+            // Show loading state
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verwijderen...';
+            this.disabled = true;
+
             fetch('../controllers/menu.php?action=deleteRecipe', {
                 method: 'POST',
                 headers: { },
@@ -158,13 +167,29 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert('Recept succesvol verwijderd!');
+                    // Redirect to home page after successful delete
                     window.location.href = 'home.php';
                 } else {
+                    // Hide the modal
+                    const modalElement = document.getElementById('deleteConfirmModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    modal.hide();
+
+                    // Reset button state
+                    this.innerHTML = 'Verwijderen';
+                    this.disabled = false;
+
+                    // Show error alert
                     alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
                 }
             })
-            .catch(() => alert('Verwijderen mislukt door een netwerkfout.'));
+            .catch(err => {
+                console.error('Error deleting recipe:', err);
+                // Reset button state
+                this.innerHTML = 'Verwijderen';
+                this.disabled = false;
+                alert('Verwijderen mislukt door een netwerkfout.');
+            });
         });
     }
 });
