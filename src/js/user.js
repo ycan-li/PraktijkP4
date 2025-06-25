@@ -79,6 +79,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Update UI
                 checkLoginStatus();
+
+                // Reload page to reset all UI elements
+                window.location.reload();
             });
         });
     };

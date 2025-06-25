@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (icon.dataset.hasListener === 'true') return;
 
             icon.dataset.hasListener = 'true';
-            icon.addEventListener('click', function(e) {
+            icon.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation(); // Prevent triggering the card link
 
@@ -219,30 +219,30 @@ document.addEventListener('DOMContentLoaded', function () {
                         menuId: menuId
                     })
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        // Toggle the heart icons
-                        if (data.isFavorite) {
-                            filledHeart.classList.remove('d-none');
-                            emptyHeart.classList.add('d-none');
-                        } else {
-                            filledHeart.classList.add('d-none');
-                            emptyHeart.classList.remove('d-none');
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Toggle the heart icons
+                            if (data.isFavorite) {
+                                filledHeart.classList.remove('d-none');
+                                emptyHeart.classList.add('d-none');
+                            } else {
+                                filledHeart.classList.add('d-none');
+                                emptyHeart.classList.remove('d-none');
 
-                            // If we're in favorites filter mode, we might need to remove this card
-                            if (favFilterActive) {
-                                // Wait a moment before refreshing to give user visual feedback
-                                setTimeout(() => {
-                                    renderContent(currentPageGlobal);
-                                }, 300);
+                                // If we're in favorites filter mode, we might need to remove this card
+                                if (favFilterActive) {
+                                    // Wait a moment before refreshing to give user visual feedback
+                                    setTimeout(() => {
+                                        renderContent(currentPageGlobal);
+                                    }, 300);
+                                }
                             }
                         }
-                    }
-                })
-                .catch(err => {
-                    console.error('Error toggling favorite:', err);
-                });
+                    })
+                    .catch(err => {
+                        console.error('Error toggling favorite:', err);
+                    });
             });
         });
     }
@@ -771,14 +771,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                     editLi.classList.add('edit-btn', 'position-relative', 'z-2');
                                     editLi.innerHTML = '<i class="bi bi-pencil display-7"></i>';
                                     editLi.addEventListener('click', (e) => {
-                                        e.preventDefault(); e.stopPropagation();
+                                        e.preventDefault();
+                                        e.stopPropagation();
                                         window.location.href = `upsert.php?id=${menuItem['id']}`;
                                     });
                                     toolbar.prepend(editLi);
                                 }
                             }
                         }
-                         count++;
+                        count++;
                     }
                 }
 
@@ -787,15 +788,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 attachDeleteListeners();
 
             }); // end data.then
-        }
+    }
 
     /**
      * Attaches click event listeners to delete buttons in cards to remove recipes via API.
      */
     function attachDeleteListeners() {
-        const userInfo = sessionStorage.getItem('userInfo');
-        if (!userInfo) return;
-
         // Initialize the delete confirmation modal
         const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
         const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
@@ -808,7 +806,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btn.dataset.hasListener === 'true') return;
             btn.dataset.hasListener = 'true';
 
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', function (e) {
+                const userInfo = sessionStorage.getItem('userInfo');
+                if (!userInfo) {
+                    console.warn('Unable to retrieve user info');
+                    return;
+                }
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -830,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (confirmDeleteBtn && !confirmDeleteBtn.dataset.hasListener) {
             confirmDeleteBtn.dataset.hasListener = 'true';
 
-            confirmDeleteBtn.addEventListener('click', function() {
+            confirmDeleteBtn.addEventListener('click', function () {
                 if (!currentCardToDelete) {
                     deleteModal.hide();
                     return;
@@ -853,36 +856,36 @@ document.addEventListener('DOMContentLoaded', function () {
                     method: 'POST',
                     body: fd
                 })
-                .then(res => res.json())
-                .then(data => {
-                    // Reset button state
-                    this.innerHTML = 'Verwijderen';
-                    this.disabled = false;
+                    .then(res => res.json())
+                    .then(data => {
+                        // Reset button state
+                        this.innerHTML = 'Verwijderen';
+                        this.disabled = false;
 
-                    if (data.success) {
-                        // Remove the card from the UI
-                        if (currentCardToDelete) {
-                            currentCardToDelete.remove();
+                        if (data.success) {
+                            // Remove the card from the UI
+                            if (currentCardToDelete) {
+                                currentCardToDelete.remove();
+                            }
+                            // Hide the modal
+                            deleteModal.hide();
+                        } else {
+                            // Hide the modal
+                            deleteModal.hide();
+                            // Show error alert
+                            alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
                         }
-                        // Hide the modal
-                        deleteModal.hide();
-                    } else {
+                    })
+                    .catch(err => {
+                        console.error('Error deleting recipe:', err);
+                        // Reset button state
+                        this.innerHTML = 'Verwijderen';
+                        this.disabled = false;
                         // Hide the modal
                         deleteModal.hide();
                         // Show error alert
-                        alert('Verwijderen mislukt: ' + (data.message || 'Onbekende fout.'));
-                    }
-                })
-                .catch(err => {
-                    console.error('Error deleting recipe:', err);
-                    // Reset button state
-                    this.innerHTML = 'Verwijderen';
-                    this.disabled = false;
-                    // Hide the modal
-                    deleteModal.hide();
-                    // Show error alert
-                    alert('Verwijderen mislukt door een netwerkfout.');
-                });
+                        alert('Verwijderen mislukt door een netwerkfout.');
+                    });
             });
         }
     }
@@ -904,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
         container.insertAdjacentHTML('afterbegin', html);
         const btn = document.getElementById('from-me-toggle');
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             fromMeFilterActive = !fromMeFilterActive;
             if (fromMeFilterActive) {
                 this.classList.remove('btn-outline-primary');
