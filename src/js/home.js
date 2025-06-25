@@ -802,16 +802,17 @@ document.addEventListener('DOMContentLoaded', function () {
         let currentCardToDelete = null;
         let currentMenuName = '';
 
+        const userInfo = sessionStorage.getItem('userInfo');
+        if (!userInfo) {
+            console.warn('Unable to retrieve user info');
+            return;
+        }
+
         document.querySelectorAll('.toolbar .delete-btn').forEach(btn => {
             if (btn.dataset.hasListener === 'true') return;
             btn.dataset.hasListener = 'true';
 
             btn.addEventListener('click', function (e) {
-                const userInfo = sessionStorage.getItem('userInfo');
-                if (!userInfo) {
-                    console.warn('Unable to retrieve user info');
-                    return;
-                }
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -869,6 +870,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             // Hide the modal
                             deleteModal.hide();
+                            // Refresh the page to reflect changes
+                            location.reload();
                         } else {
                             // Hide the modal
                             deleteModal.hide();
